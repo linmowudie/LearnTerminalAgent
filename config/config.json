@@ -1,0 +1,70 @@
+{
+  "descriptions": {
+    "agent": {
+      "api_key": "阿里云百炼 API 密钥，用于调用通义千问模型",
+      "base_url": "API 基础 URL 地址，使用兼容模式端点",
+      "model_name": "使用的模型名称，当前为 qwen3.5-flash",
+      "max_tokens": "单次请求最大生成 token 数",
+      "timeout": "API 请求超时时间（秒）",
+      "max_iterations": "Agent 单次任务最大迭代次数"
+    },
+    "security": {
+      "dangerous_patterns": "危险命令模式列表，用于拦截可能危害系统的命令"
+    },
+    "context": {
+      "threshold": "上下文压缩阈值（字符数），超过此值触发压缩",
+      "keep_recent": "保留的最近会话轮数",
+      "auto_compact_enabled": "是否启用自动上下文压缩"
+    },
+    "tasks": {
+      "max_items": "任务列表最大保留条目数"
+    },
+    "background": {
+      "timeout": "后台任务超时时间（秒）"
+    },
+    "team": {
+      "poll_interval": "团队协作模式下轮询间隔（秒）",
+      "idle_timeout": "空闲超时时间（秒），超过此时间无活动则断开连接"
+    },
+    "worktree": {
+      "enabled": "是否启用 Git worktree 隔离功能",
+      "base_ref": "Git worktree 基础引用，通常为 HEAD"
+    }
+  },
+  "agent": {
+    "api_key": "",
+    "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "model_name": "qwen3.5-flash",
+    "max_tokens": 8000,
+    "timeout": 120,
+    "max_iterations": 50
+  },
+  "security": {
+    "dangerous_patterns": [
+      "rm -rf /",
+      "sudo",
+      "shutdown",
+      "reboot",
+      "> /dev/"
+    ]
+  },
+  "context": {
+    "threshold": 50000,
+    "keep_recent": 3,
+    "auto_compact_enabled": true
+  },
+  "tasks": {
+    "max_items": 20
+  },
+  "background": {
+    "timeout": 300
+  },
+  "team": {
+    "poll_interval": 5,
+    "idle_timeout": 60
+  },
+  "worktree": {
+    "enabled": true,
+    "base_ref": "HEAD"
+  }
+}
