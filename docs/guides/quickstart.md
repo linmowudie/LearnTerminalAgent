@@ -1,4 +1,4 @@
-# LearnAgent 快速入门
+# LearnTerminalAgent 快速入门
 
 5 分钟快速开始使用 LearnAgent。
 
