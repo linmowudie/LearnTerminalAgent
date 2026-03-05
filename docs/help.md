@@ -1,4 +1,4 @@
-# LearnAgent 使用指南
+# LearnTerminalAgent 使用指南
 
 ## 快速开始
 
@@ -7,10 +7,10 @@
 直接输入自然语言描述你的任务，例如：
 
 ```
-LearnAgent >> 创建一个 hello.txt 文件
-LearnAgent >> 列出当前目录的所有文件
-LearnAgent >> 查看 README.md 的内容
-LearnAgent >> 运行 python --version
+LearnTerminalAgent >> 创建一个 hello.txt 文件
+LearnTerminalAgent >> 列出当前目录的所有文件
+LearnTerminalAgent >> 查看 README.md 的内容
+LearnTerminalAgent >> 运行 python --version
 ```
 
 ### 2. 特殊命令
@@ -53,7 +53,7 @@ Agent 会自动管理任务进度，适合复杂的多步骤任务。
 
 示例：
 ```
-LearnAgent >> 用子代理探索项目结构
+LearnTerminalAgent >> 用子代理探索项目结构
 ```
 
 #### Skills - 技能加载
@@ -61,7 +61,7 @@ LearnAgent >> 用子代理探索项目结构
 
 示例：
 ```
-LearnAgent >> 加载 pdf 技能
+LearnTerminalAgent >> 加载 pdf 技能
 ```
 
 #### Context - 上下文压缩
@@ -71,23 +71,23 @@ LearnAgent >> 加载 pdf 技能
 
 #### 示例 1：创建文件
 ```
-LearnAgent >> 创建一个 test.py 文件，包含 print("Hello")
+LearnTerminalAgent >> 创建一个 test.py 文件，包含 print("Hello")
 ```
 
 #### 示例 2：多步骤任务
 ```
-LearnAgent >> 帮我重构这个项目的代码结构
+LearnTerminalAgent >> 帮我重构这个项目的代码结构
 ```
 Agent 会自动使用 TodoWrite 管理任务进度。
 
 #### 示例 3：使用子代理
 ```
-LearnAgent >> 分析 docs 目录下所有文档的结构
+LearnTerminalAgent >> 分析 docs 目录下所有文档的结构
 ```
 
 #### 示例 4：加载技能
 ```
-LearnAgent >> 我需要处理 PDF 文档，请加载相关技能
+LearnTerminalAgent >> 我需要处理 PDF 文档，请加载相关技能
 ```
 
 ### 6. 最佳实践
