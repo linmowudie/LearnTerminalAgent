@@ -1,6 +1,6 @@
 # s12 - Worktree Isolation: 工作树隔离机制
 
-LearnAgent 通过 Git worktree 实现任务隔离，每个任务在独立的 Git 分支和工作目录中进行。
+LearnTerminalAgent 通过 Git worktree 实现任务隔离，每个任务在独立的 Git 分支和工作目录中进行。
 
 ## 📖 原理介绍
 

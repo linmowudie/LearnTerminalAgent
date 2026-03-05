@@ -1,6 +1,6 @@
 # s10 - Team Protocols: 团队通信协议
 
-LearnAgent 团队协作的通信协议规范，定义了消息类型、格式和通信模式。
+LearnTerminalAgent 团队协作的通信协议规范，定义了消息类型、格式和通信模式。
 
 ## 📖 原理介绍
 

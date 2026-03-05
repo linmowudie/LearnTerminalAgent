@@ -1,6 +1,6 @@
 # s03 - TodoWrite: 任务管理实现
 
-LearnAgent 提供两层任务管理系统：TodoWrite（内存级）和 Task System（持久化）。本节介绍基础的 TodoWrite 功能。
+LearnTerminalAgent 提供两层任务管理系统：TodoWrite（内存级）和 Task System（持久化）。本节介绍基础的 TodoWrite 功能。
 
 ## 📖 原理介绍
 

@@ -1,6 +1,6 @@
 # s01 - The Agent Loop: Agent 核心循环
 
-LearnAgent 的基础是 Agent 循环机制，它驱动整个智能体的运行。
+LearnTerminalAgent 的基础是 Agent 循环机制，它驱动整个智能体的运行。
 
 ## 📖 原理介绍
 

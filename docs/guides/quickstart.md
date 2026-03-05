@@ -1,6 +1,6 @@
 # LearnTerminalAgent 快速入门
 
-5 分钟快速开始使用 LearnAgent。
+5 分钟快速开始使用 LearnTerminalAgent。
 
 ## 📋 前置要求
 
@@ -62,7 +62,7 @@ python -m learn_agent.main
 
 ```
 ============================================================
-LearnAgent 配置
+LearnTerminalAgent 配置
 ============================================================
 ✓ 模型：qwen3.5-flash
 ✓ Base URL: https://dashscope.aliyuncs.com/compatible-mode/v1
@@ -71,7 +71,7 @@ LearnAgent 配置
 ✓ Timeout: 120s
 ============================================================
 
-LearnAgent >>
+LearnTerminalAgent >>
 ```
 
 ## 💻 基础使用
@@ -79,15 +79,15 @@ LearnAgent >>
 ### 第一个任务
 
 ```
-LearnAgent >> 创建一个 hello.txt 文件，写入 "Hello, LearnAgent!"
+LearnTerminalAgent >> 创建一个 hello.txt 文件，写入 "Hello, LearnTerminalAgent!"
 ```
 
 Agent 会执行：
 
 ```
 [Iteration 1]
-🟡 [write_file] {'path': 'hello.txt', 'content': 'Hello, LearnAgent!'}
-Successfully wrote 20 characters to hello.txt
+🟡 [write_file] {'path': 'hello.txt', 'content': 'Hello, LearnTerminalAgent!'}
+Successfully wrote 24 characters to hello.txt
 
 Done! File created successfully.
 ```
@@ -95,21 +95,21 @@ Done! File created successfully.
 ### 查看文件内容
 
 ```
-LearnAgent >> 读取 hello.txt 的内容
+LearnTerminalAgent >> 读取 hello.txt 的内容
 ```
 
 ```
 [Iteration 1]
 🟡 [read_file] {'path': 'hello.txt'}
-Hello, LearnAgent!
+Hello, LearnTerminalAgent!
 
-File contents: Hello, LearnAgent!
+File contents: Hello, LearnTerminalAgent!
 ```
 
 ### 运行命令
 
 ```
-LearnAgent >> 列出当前目录的所有文件
+LearnTerminalAgent >> 列出当前目录的所有文件
 ```
 
 ```

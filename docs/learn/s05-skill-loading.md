@@ -1,6 +1,6 @@
 # s05 - Skill Loading: 技能加载机制
 
-LearnAgent 支持通过外部技能文件扩展 Agent 能力，实现按需加载知识和最佳实践。
+LearnTerminalAgent 支持通过外部技能文件扩展 Agent 能力，实现按需加载知识和最佳实践。
 
 ## 📖 原理介绍
 

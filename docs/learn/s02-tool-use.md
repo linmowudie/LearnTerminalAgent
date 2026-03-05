@@ -1,6 +1,6 @@
 # s02 - Tool Use: 工具使用机制
 
-LearnAgent 通过工具系统与外部世界交互，这是 Agent 执行实际任务的关键能力。
+LearnTerminalAgent 通过工具系统与外部世界交互，这是 Agent 执行实际任务的关键能力。
 
 ## 📖 原理介绍
 
@@ -28,7 +28,7 @@ graph LR
 
 ### 工具类型
 
-LearnAgent 提供四类工具：
+LearnTerminalAgent 提供四类工具：
 
 1. **基础工具** (s02)
    - `bash` - Shell 命令执行

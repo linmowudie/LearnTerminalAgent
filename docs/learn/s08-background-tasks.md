@@ -1,6 +1,6 @@
 # s08 - Background Tasks: 后台任务机制
 
-LearnAgent 支持在后台线程中执行长时间运行的任务，通过通知队列将结果注入到 Agent 循环中。
+LearnTerminalAgent 支持在后台线程中执行长时间运行的任务，通过通知队列将结果注入到 Agent 循环中。
 
 ## 📖 原理介绍
 

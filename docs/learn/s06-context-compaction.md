@@ -1,6 +1,6 @@
 # s06 - Context Compaction: 上下文压缩策略
 
-LearnAgent 实现三层上下文压缩策略，有效管理 token 使用，避免超出 LLM 上下文窗口限制。
+LearnTerminalAgent 实现三层上下文压缩策略，有效管理 token 使用，避免超出 LLM 上下文窗口限制。
 
 ## 📖 原理介绍
 

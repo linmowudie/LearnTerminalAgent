@@ -200,7 +200,7 @@ config.save_to_json("path/to/config.json")
 ---
 
 #### [快速入门](guides/quickstart.md)
-**用途**: 快速开始使用 LearnAgent  
+**用途**: 快速开始使用 LearnTerminalAgent  
 **用法**:
 ```bash
 # 安装依赖
@@ -350,4 +350,4 @@ agent.reload_skills()
 ---
 
 **最后更新**: 2026-03-05  
-**维护者**: LearnAgent Team
+**维护者**: LearnTerminalAgent Team

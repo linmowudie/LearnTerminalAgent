@@ -1,6 +1,6 @@
 # s11 - Autonomous Agents: 自主代理机制
 
-LearnAgent 支持自主代理，能够自动扫描未分配任务、主动认领并执行。
+LearnTerminalAgent 支持自主代理，能够自动扫描未分配任务、主动认领并执行。
 
 ## 📖 原理介绍
 

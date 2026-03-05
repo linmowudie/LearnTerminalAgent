@@ -1,6 +1,6 @@
 # s07 - Task System: 任务管理系统
 
-LearnAgent 的高级任务管理系统，支持持久化存储和依赖关系管理。
+LearnTerminalAgent 的高级任务管理系统，支持持久化存储和依赖关系管理。
 
 ## 📖 原理介绍
 

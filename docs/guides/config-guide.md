@@ -1,4 +1,4 @@
-# LearnAgent 配置指南
+# LearnTerminalAgent 配置指南
 
 详细配置说明和环境变量管理。
 
@@ -461,7 +461,7 @@ config.print_info()
 输出：
 ```
 ============================================================
-LearnAgent 配置
+LearnTerminalAgent 配置
 ============================================================
 ✓ 模型：qwen3.5-flash
 ✓ Base URL: https://dashscope.aliyuncs.com/compatible-mode/v1
