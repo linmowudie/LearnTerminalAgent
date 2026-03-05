@@ -152,11 +152,11 @@ Directory listing complete.
 直接描述你的需求，Agent 会自动选择工具：
 
 ```
-LearnAgent >> 创建一个 test.py 文件
-LearnAgent >> 运行 python test.py
-LearnAgent >> 查看 src 目录下有哪些文件
-LearnAgent >> 添加一个任务：完成项目文档
-LearnAgent >> 把任务 1 标记为进行中
+LearnTerminalAgent >> 创建一个 test.py 文件
+LearnTerminalAgent >> 运行 python test.py
+LearnTerminalAgent >> 查看 src 目录下有哪些文件
+LearnTerminalAgent >> 添加一个任务：完成项目文档
+LearnTerminalAgent >> 把任务 1 标记为进行中
 ```
 
 ## 📊 进阶功能
@@ -166,15 +166,15 @@ LearnAgent >> 把任务 1 标记为进行中
 #### TodoWrite (短期任务)
 
 ```
-LearnAgent >> 添加任务：完成项目文档
+LearnTerminalAgent >> 添加任务：完成项目文档
 Added task #1. Current list:
 [ ] #1: 完成项目文档
 
-LearnAgent >> 更新任务 1 为进行中
+LearnTerminalAgent >> 更新任务 1 为进行中
 Updated task #1. Current list:
 [>] #1: 完成项目文档
 
-LearnAgent >> 完成任务 1
+LearnTerminalAgent >> 完成任务 1
 Updated task #1. Current list:
 [x] #1: 完成项目文档
 (1/1 completed)
@@ -183,7 +183,7 @@ Updated task #1. Current list:
 #### Task System (持久化任务)
 
 ```
-LearnAgent >> 创建一个任务，主题是"重构代码"，描述"优化性能"
+LearnTerminalAgent >> 创建一个任务，主题是"重构代码"，描述"优化性能"
 Created task: {
   "id": 1,
   "subject": "重构代码",
@@ -191,14 +191,14 @@ Created task: {
   "status": "pending"
 }
 
-LearnAgent >> 列出所有任务
+LearnTerminalAgent >> 列出所有任务
 [ ] #1: 重构代码
 ```
 
 ### 2. 子代理委派
 
 ```
-LearnAgent >> 用子代理探索项目结构
+LearnTerminalAgent >> 用子代理探索项目结构
 
 [SubAgent Starting Task]
 Task: Explore project structure...
@@ -215,10 +215,10 @@ Done! I've delegated the task. Here's what it found...
 ### 3. 后台任务
 
 ```
-LearnAgent >> 在后台运行 npm install
+LearnTerminalAgent >> 在后台运行 npm install
 Background task a1b2c3d4 started: npm install
 
-LearnAgent >> 检查后台任务状态
+LearnTerminalAgent >> 检查后台任务状态
 a1b2c3d4: [completed] npm install
 ```
 
@@ -226,7 +226,7 @@ a1b2c3d4: [completed] npm install
 
 查看统计：
 ```
-LearnAgent >> /stats
+LearnTerminalAgent >> /stats
 上下文统计:
   Token 数：15000
   阈值：50000
@@ -236,7 +236,7 @@ LearnAgent >> /stats
 
 手动压缩：
 ```
-LearnAgent >> /compact
+LearnTerminalAgent >> /compact
 Context compressed successfully
 ```
 
