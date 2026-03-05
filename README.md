@@ -1,6 +1,6 @@
 # LearnTerminalAgent
 
-LearnTerminalAgent 是一个基于 LangChain 的智能 Agent 框架，实现了完整的 Agent 循环、工具使用、任务管理、多代理协作等功能是开源项目learn-claude-code的复现版本。
+LearnTerminalAgent 是一个基于 LangChain 的智能 Agent 框架，实现了完整的 Agent 循环、工具使用、任务管理、多代理协作等功能，是开源项目 [learn-claude-code](https://github.com/shareAI-lab/learn-claude-code) 的复现版本。
 
 ## 🌟 特性
 
@@ -34,6 +34,12 @@ QWEN_API_KEY=sk-your-api-key-here
 
 ```bash
 python -m learn_agent.main
+```
+
+或者直接使用命令行工具：
+
+```bash
+learn-terminal-agent
 ```
 
 详细指南请查看 [快速启动文档](docs/QUICK_START.md)
@@ -74,7 +80,12 @@ from learn_agent.agent import AgentLoop
 agent = AgentLoop()
 response = agent.run("创建一个 hello.txt 文件，写入 Hello World")
 ```
-或者运行main.py文件直接进行对话交流
+
+或者运行 main.py 文件直接进行对话交流：
+
+```bash
+python src/learn_agent/main.py
+```
 
 ### 任务管理
 
