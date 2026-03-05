@@ -1,4 +1,4 @@
-# LearnAgent 文档索引
+# LearnTerminalAgent 文档索引
 
 完整的文档导航和索引。
 
