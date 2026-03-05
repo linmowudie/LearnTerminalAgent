@@ -1,4 +1,4 @@
-# LearnAgent 工具使用指南
+# LearnTerminalAgent 工具使用指南
 
 所有内置工具的详细说明和使用示例。
 
