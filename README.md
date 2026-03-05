@@ -1,6 +1,6 @@
-# LearnAgent
+# LearnTerminalAgent
 
-LearnAgent 是一个基于 LangChain 的智能 Agent 框架，实现了完整的 Agent 循环、工具使用、任务管理、多代理协作等功能是开源项目learn-claude-code的复现版本。
+LearnTerminalAgent 是一个基于 LangChain 的智能 Agent 框架，实现了完整的 Agent 循环、工具使用、任务管理、多代理协作等功能是开源项目learn-claude-code的复现版本。
 
 ## 🌟 特性
 
