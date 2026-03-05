@@ -74,6 +74,7 @@ from learn_agent.agent import AgentLoop
 agent = AgentLoop()
 response = agent.run("创建一个 hello.txt 文件，写入 Hello World")
 ```
+或者运行main.py文件直接进行对话交流
 
 ### 任务管理
 
