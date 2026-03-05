@@ -17,7 +17,7 @@ from learn_agent.agent import AgentLoop
 def print_banner():
     """打印欢迎横幅"""
     print("\n" + "=" * 60)
-    print("LearnAgent - LangChain 实现的智能 Agent")
+    print("LearnTerminalAgent - LangChain 实现的智能 Agent")
     print("基于 learn-claude-code 项目重构")
     print("=" * 60)
     print("\n可用命令:")
@@ -63,7 +63,7 @@ def print_help():
     else:
         # 如果文件不存在，使用默认帮助信息
         print("""
-                LearnAgent 使用指南 (s01-s06 功能):
+                LearnTerminalAgent 使用指南 (s01-s06 功能):
 
                 1. 直接输入自然语言描述你的任务，例如:
                 - "创建一个 hello.txt 文件"
@@ -98,9 +98,9 @@ def print_help():
                 - Context: 自动压缩长对话
 
                 示例:
-                LearnAgent >> 创建一个 test.py 文件，包含 print("Hello")
-                LearnAgent >> 用子代理探索项目结构
-                LearnAgent >> 加载 pdf 技能
+                LearnTerminalAgent >> 创建一个 test.py 文件，包含 print("Hello")
+                LearnTerminalAgent >> 用子代理探索项目结构
+                LearnTerminalAgent >> 加载 pdf 技能
                 """)
 
 
@@ -131,7 +131,7 @@ def main():
     while True:
         try:
             # 获取用户输入
-            query = input("\033[36mLearnAgent >> \033[0m").strip()
+            query = input("\033[36mLearnTerminalAgent >> \033[0m").strip()
             
             # 只有带 '/' 前缀的才是特殊命令
             if query.startswith('/'):
