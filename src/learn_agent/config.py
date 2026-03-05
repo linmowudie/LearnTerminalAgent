@@ -1,5 +1,5 @@
 """
-LearnAgent 配置管理模块
+LearnTerminalAgent 配置管理模块
 
 集中管理所有配置项，支持多环境变量来源和 JSON 配置文件
 """

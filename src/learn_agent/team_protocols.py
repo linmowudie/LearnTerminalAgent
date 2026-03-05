@@ -1,5 +1,5 @@
 """
-LearnAgent Team Protocols 模块 - s10
+LearnTerminalAgent Team Protocols 模块 - s10
 
 实现团队协议功能：
 - Shutdown Protocol: 优雅关闭队友

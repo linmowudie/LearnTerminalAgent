@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-LearnAgent 启动脚本
+LearnTerminalAgent 启动脚本
 
 用法:
     python run.py              # 启动交互式 Agent

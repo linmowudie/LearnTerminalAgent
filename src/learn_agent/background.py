@@ -1,5 +1,5 @@
 """
-LearnAgent Background Tasks 模块 - s08
+LearnTerminalAgent Background Tasks 模块 - s08
 
 实现后台任务功能，支持在后台线程中运行命令
 通过通知队列在 LLM 调用前注入结果

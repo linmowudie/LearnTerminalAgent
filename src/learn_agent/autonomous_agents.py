@@ -1,5 +1,5 @@
 """
-LearnAgent Autonomous Agents 模块 - s11
+LearnTerminalAgent Autonomous Agents 模块 - s11
 
 实现自主代理功能：
 - Idle 周期轮询

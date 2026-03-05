@@ -1,5 +1,5 @@
 """
-LearnAgent Context Compaction 模块 - s06
+LearnTerminalAgent Context Compaction 模块 - s06
 
 实现上下文压缩功能，支持三层压缩策略
 """

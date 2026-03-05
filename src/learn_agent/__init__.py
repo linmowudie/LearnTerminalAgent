@@ -1,4 +1,4 @@
-# LearnAgent 核心模块
+# LearnTerminalAgent 核心模块
 
 from .agent import AgentLoop
 from .config import AgentConfig, get_config

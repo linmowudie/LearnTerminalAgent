@@ -1,5 +1,5 @@
 """
-LearnAgent Task System 模块 - s07
+LearnTerminalAgent Task System 模块 - s07
 
 实现基于 JSON 文件的持久化任务管理系统，支持依赖关系图
 任务以 JSON 文件形式存储在 .tasks/ 目录中，即使上下文压缩也能保存

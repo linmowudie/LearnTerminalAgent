@@ -1,5 +1,5 @@
 """
-LearnAgent 工具模块
+LearnTerminalAgent 工具模块
 
 提供所有可用的工具定义
 """

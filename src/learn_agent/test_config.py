@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-LearnAgent 配置测试脚本
+LearnTerminalAgent 配置测试脚本
 
 测试 JSON 配置文件是否正确加载
 """

@@ -1,5 +1,5 @@
 """
-LearnAgent Skill Loading 模块 - s05
+LearnTerminalAgent Skill Loading 模块 - s05
 
 实现技能加载功能，支持按需加载知识
 """

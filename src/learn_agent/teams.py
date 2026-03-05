@@ -1,5 +1,5 @@
 """
-LearnAgent Agent Teams 模块 - s09
+LearnTerminalAgent Agent Teams 模块 - s09
 
 实现持久化命名代理（队友）功能，支持基于文件 JSONL 收件箱的通信
 每个队友在独立线程中运行，通过消息队列进行异步通信

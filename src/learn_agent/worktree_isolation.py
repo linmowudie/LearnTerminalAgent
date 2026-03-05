@@ -1,5 +1,5 @@
 """
-LearnAgent Worktree Task Isolation 模块 - s12
+LearnTerminalAgent Worktree Task Isolation 模块 - s12
 
 实现工作树和任务隔离功能：
 - Git worktree 管理

@@ -1,6 +1,5 @@
 """
-LearnAgent SubAgent 模块 - s04
-
+LearnTerminalAgent SubAgent 模块 - s04
 实现子代理功能，支持任务委派和上下文隔离
 """
 

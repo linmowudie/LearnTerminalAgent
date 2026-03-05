@@ -1,5 +1,5 @@
 """
-LearnAgent 项目配置管理
+LearnTerminalAgent 项目配置管理
 
 管理项目根目录、数据目录和配置
 """

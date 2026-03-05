@@ -1,5 +1,5 @@
 """
-LearnAgent Agent 循环核心实现
+LearnTerminalAgent Agent 循环核心实现
 
 实现完整的 Agent 循环逻辑
 """

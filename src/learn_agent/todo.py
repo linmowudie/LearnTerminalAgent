@@ -1,5 +1,5 @@
 """
-LearnAgent TodoWrite 模块 - s03
+LearnTerminalAgent TodoWrite 模块 - s03
 
 实现任务管理和进度追踪功能
 """
