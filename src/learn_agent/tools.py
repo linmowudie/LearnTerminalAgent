@@ -119,6 +119,85 @@ def write_file(path: str, content: str) -> str:
 
 
 @tool
+def edit_file(file_path: str, original_text: str, new_text: str) -> str:
+    """
+    编辑文件中的文本内容 - 执行精确的字符串替换
+    
+    Args:
+        file_path: 要编辑的文件路径
+        original_text: 要被替换的原始文本 (必须完全匹配)
+        new_text: 替换后的新文本
+        
+    Returns:
+        操作结果
+    """
+    try:
+        # 安全检查：确保路径在工作目录内
+        abs_path = os.path.abspath(file_path)
+        if not abs_path.startswith(os.getcwd()):
+            return f"Error: Path escapes workspace: {file_path}"
+        
+        # 检查文件是否存在
+        if not os.path.exists(abs_path):
+            return f"Error: File not found: {file_path}"
+        
+        # 读取文件内容
+        with open(abs_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # 查找原始文本
+        if original_text not in content:
+            return f"Error: Original text not found in file"
+        
+        # 执行替换
+        new_content = content.replace(original_text, new_text, 1)
+        
+        # 写回文件
+        with open(abs_path, 'w', encoding='utf-8') as f:
+            f.write(new_content)
+        
+        changes = len(new_text) - len(original_text)
+        change_desc = f"+{changes}" if changes > 0 else str(changes)
+        return f"Successfully edited {file_path}: replaced {len(original_text)} chars with {len(new_text)} chars (net change: {change_desc} chars)"
+        
+    except Exception as e:
+        return f"Error: {type(e).__name__}: {str(e)}"
+
+
+@tool
+def format_html_output(content: str, style: str = "default") -> str:
+    """
+    使用 HTML 标签格式化输出内容，优化终端显示效果
+    
+    Args:
+        content: 要格式化的内容
+        style: 样式类型 (default, code, success, warning, error, info)
+        
+    Returns:
+        格式化后的 HTML 内容
+    """
+    styles = {
+        "default": "color: #333; background: #f5f5f5; padding: 8px; border-radius: 4px;",
+        "code": "color: #24292e; background: #f6f8fa; padding: 12px; border-radius: 6px; font-family: monospace; white-space: pre-wrap;",
+        "success": "color: #22863a; background: #dcffe4; padding: 8px; border-radius: 4px; border-left: 4px solid #28a745;",
+        "warning": "color: #735c0f; background: #fffbdd; padding: 8px; border-radius: 4px; border-left: 4px solid #f0b37e;",
+        "error": "color: #cb2431; background: #ffeef0; padding: 8px; border-radius: 4px; border-left: 4px solid #d73a49;",
+        "info": "color: #0366d6; background: #f1f8ff; padding: 8px; border-radius: 4px; border-left: 4px solid #2188ff;",
+    }
+    
+    selected_style = styles.get(style, styles["default"])
+    
+    # 创建 HTML 片段
+    html_content = (
+        f"<div style=\"{selected_style}\">"
+        f"{content}"
+        f"</div>"
+    )
+    
+    return html_content
+
+
+@tool
 def list_directory(path: str = ".") -> str:
     """
     列出目录内容
@@ -178,7 +257,9 @@ def get_all_tools():
         bash,
         read_file,
         write_file,
+        edit_file,
         list_directory,
+        format_html_output,
         # Todo 工具 (s03)
         *get_todo_tools(),
         # Task System 工具 (s07)

@@ -104,6 +104,55 @@ def print_help():
                 """)
 
 
+def _format_response_card(content: str) -> str:
+    """
+    将响应格式化为 HTML 风格的卡片输出
+    
+    Args:
+        content: 要格式化的内容
+        
+    Returns:
+        格式化后的字符串（使用 ANSI 转义码模拟 HTML 效果）
+    """
+    # ANSI 颜色代码
+    GREEN = "\033[32m"
+    CYAN = "\033[36m"
+    YELLOW = "\033[33m"
+    BOLD = "\033[1m"
+    RESET = "\033[0m"
+    
+    # 分割内容为行
+    lines = content.split('\n')
+    
+    # 构建卡片边框
+    width = max(len(line) for line in lines) + 4
+    border = "╔" + "═" * (width - 2) + "╗"
+    bottom_border = "╚" + "═" * (width - 2) + "╝"
+    
+    # 构建卡片内容
+    formatted_lines = []
+    formatted_lines.append(f"{CYAN}{border}{RESET}")
+    
+    for line in lines:
+        # 检测内容类型并应用样式
+        if line.strip().startswith(('```', 'import ', 'def ', 'class ', 'return ')):
+            # 代码块 - 使用黄色
+            formatted_lines.append(f"{CYAN}║ {YELLOW}{line.ljust(width - 4)}{CYAN} ║{RESET}")
+        elif line.strip().startswith(('✅', '✓', '✔')):
+            # 成功消息 - 使用绿色
+            formatted_lines.append(f"{CYAN}║ {GREEN}{BOLD}{line.ljust(width - 4)}{CYAN} ║{RESET}")
+        elif line.strip().startswith(('⚠️', '❗', 'Error')):
+            # 警告/错误 - 使用红色
+            formatted_lines.append(f"{CYAN}║ \033[31m{line.ljust(width - 4)}{CYAN} ║{RESET}")
+        else:
+            # 普通文本
+            formatted_lines.append(f"{CYAN}║ {GREEN}{line.ljust(width - 4)}{CYAN} ║{RESET}")
+    
+    formatted_lines.append(f"{CYAN}{bottom_border}{RESET}")
+    
+    return '\n'.join(formatted_lines)
+
+
 def main():
     """主程序入口"""
     
@@ -193,12 +242,13 @@ def main():
             if not query:
                 continue
             
-            # 运行 Agent
-            response = agent.run(query, verbose=True)
+            # 运行 Agent - 使用流式输出
+            response = agent.run(query, verbose=True, stream=True)
             
-            # 打印响应
+            # 打印响应 - 使用 HTML 样式格式化
             if response:
-                print(f"\n\033[32m{response}\033[0m\n")
+                # 使用 ANSI 转义码模拟 HTML 卡片效果
+                print(f"\n{_format_response_card(response)}\n")
         
         except KeyboardInterrupt:
             print("\n\n👋 中断退出\n")

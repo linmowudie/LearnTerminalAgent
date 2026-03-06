@@ -94,13 +94,14 @@ class AgentLoop:
         # 后台任务通知
         self._process_background_notifications()
     
-    def run(self, query: str, verbose: bool = True) -> str:
+    def run(self, query: str, verbose: bool = True, stream: bool = True) -> str:
         """
         运行 Agent 循环处理用户查询
         
         Args:
             query: 用户查询
             verbose: 是否打印详细日志
+            stream: 是否使用流式输出
             
         Returns:
             Agent 的最终响应
@@ -119,8 +120,11 @@ class AgentLoop:
                     f"({self.config.max_iterations})"
                 )
             
-            # 调用 LLM
-            response = self.llm_with_tools.invoke(self.messages)
+            # 调用 LLM（支持流式）
+            if stream:
+                response = self._stream_invoke(verbose)
+            else:
+                response = self.llm_with_tools.invoke(self.messages)
             
             # 添加 AI 响应到历史
             self.messages.append(response)
@@ -204,6 +208,60 @@ class AgentLoop:
             self.messages.append(
                 AIMessage(content="Noted background results.")
             )
+    
+    def _stream_invoke(self, verbose: bool = True) -> AIMessage:
+        """
+        流式调用 LLM 并实时打印输出
+        
+        Args:
+            verbose: 是否打印详细日志
+            
+        Returns:
+            AI 响应消息
+        """
+        from langchain_core.messages import AIMessage
+        
+        # 用于收集完整响应
+        full_content = ""
+        
+        # ANSI 转义码
+        STYLE_CYAN = "\033[36m"
+        STYLE_YELLOW = "\033[33m"
+        STYLE_RESET = "\033[0m"
+        
+        try:
+            # 使用流式调用 - 只用于显示内容
+            stream = self.llm_with_tools.stream(self.messages)
+            
+            if verbose:
+                print(f"\n{STYLE_CYAN}🤖 Agent 思考中:{STYLE_RESET}", end=" ", flush=True)
+            
+            for chunk in stream:
+                # 只收集和显示文本内容
+                if hasattr(chunk, 'content') and chunk.content:
+                    full_content += chunk.content
+                    if verbose:
+                        # 逐块打印，模拟打字机效果
+                        print(chunk.content, end="", flush=True)
+            
+            if verbose:
+                print()  # 换行
+            
+            # 注意：流式模式下工具调用可能不完整
+            # 所以我们重新调用一次获取完整的工具调用信息
+            # 但这会增加一次 API 调用，所以只在有内容时执行
+            if full_content.strip():
+                # 使用普通调用获取完整的工具调用信息
+                full_response = self.llm_with_tools.invoke(self.messages)
+                return full_response
+            else:
+                return AIMessage(content=full_content)
+            
+        except Exception as e:
+            # 如果流式失败，降级到普通调用
+            if verbose:
+                print(f"\n{STYLE_YELLOW}⚠️ 流式输出失败，切换到普通模式：{e}{STYLE_RESET}")
+            return self.llm_with_tools.invoke(self.messages)
     
     def _execute_tool(self, tool_name: str, tool_args: dict) -> str:
         """
