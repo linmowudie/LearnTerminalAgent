@@ -240,14 +240,38 @@ class AgentConfig:
         
         return True
     
+    def _mask_api_key(self, show_chars: int = 4) -> str:
+        """
+        隐藏 API Key，只显示前 N 位和最后 4 位
+        
+        Args:
+            show_chars: 显示前几位（默认 4）
+            
+        Returns:
+            掩码后的 API Key
+        """
+        if not self.api_key:
+            return "(empty)"
+        
+        if len(self.api_key) <= show_chars + 4:
+            # 太短，全部用 * 代替
+            return "*" * len(self.api_key)
+        
+        # 显示前 show_chars 位 + 中间 * + 最后 4 位
+        middle_len = len(self.api_key) - show_chars - 4
+        return f"{self.api_key[:show_chars]}{'*' * middle_len}{self.api_key[-4:]}"
+    
     def print_info(self):
         """打印配置信息"""
+        # 隐藏 API Key - 只显示前 4 位
+        api_key_display = self._mask_api_key()
+        
         print("\n" + "=" * 60)
         print("LearnAgent 配置")
         print("=" * 60)
         print(f"[OK] 模型：{self.model_name}")
         print(f"[OK] Base URL: {self.base_url}")
-        print(f"[OK] API Key: {self.api_key[:10]}...{self.api_key[-4:]}")
+        print(f"[OK] API Key: {api_key_display}")
         print(f"[OK] Max Tokens: {self.max_tokens}")
         print(f"[OK] Timeout: {self.timeout}s")
         print("=" * 60 + "\n")
