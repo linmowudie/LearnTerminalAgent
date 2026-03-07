@@ -79,6 +79,35 @@ LearnAgent 配置
 LearnAgent >>
 ```
 
+## 🚀 选择工作空间
+
+### 方法 1：在当前目录运行
+
+```bash
+cd 你的项目目录
+python -m learn_agent.main
+```
+
+### 方法 2：指定工作空间路径
+
+```bash
+python -m learn_agent.main /path/to/your/project
+```
+
+**示例：**
+```bash
+# 方式 1：进入项目目录
+cd F:\ProjectCode\MyApp
+python -m learn_agent.main
+
+# 方式 2：直接指定路径
+python -m learn_agent.main F:\ProjectCode\MyApp
+```
+
+两种方式效果相同：LLM 只能访问该目录下的文件。
+
+**重要提示**：工作空间限制了 LLM 的文件访问范围，确保安全性。就像代码编辑器打开特定文件夹一样，LLM 无法访问工作空间外的文件。
+
 ## 💻 第一个任务
 
 ### 示例 1：创建文件

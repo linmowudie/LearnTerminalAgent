@@ -208,9 +208,14 @@ class TeammateManager:
             prompt: 初始任务
         """
         from .tools import get_all_tools
+        from .workspace import get_workspace
+        
+        # 继承工作空间
+        workspace = get_workspace()
         
         sys_prompt = (
-            f"You are '{name}', role: {role}, at {os.getcwd()}. "
+            f"You are '{name}', role: {role}, working in directory: {workspace.root}.\n"
+            f"All file operations MUST be within this workspace.\n"
             f"Use send_message to communicate. Complete your task."
         )
         
@@ -392,10 +397,13 @@ class TeammateManager:
             return "Error: Dangerous command blocked"
         
         try:
+            from .workspace import get_workspace
+            workspace = get_workspace()
+            
             r = subprocess.run(
                 command,
                 shell=True,
-                cwd=os.getcwd(),
+                cwd=workspace.root,  # 使用工作空间根目录
                 capture_output=True,
                 text=True,
                 timeout=120,
@@ -408,9 +416,9 @@ class TeammateManager:
     def _run_read(self, path: str, limit: int = None) -> str:
         """读取文件"""
         try:
-            abs_path = os.path.abspath(path)
-            if not abs_path.startswith(os.getcwd()):
-                return f"Error: Path escapes workspace: {path}"
+            from .workspace import get_workspace
+            workspace = get_workspace()
+            abs_path = workspace.resolve_path(path)
             
             with open(abs_path, 'r', encoding='utf-8') as f:
                 lines = f.readlines()
@@ -420,15 +428,17 @@ class TeammateManager:
             
             content = ''.join(lines)
             return content[:50000] if len(content) > 50000 else content
+        except ValueError as e:
+            return f"Error: {str(e)}"
         except Exception as e:
             return f"Error: {type(e).__name__}: {str(e)}"
     
     def _run_write(self, path: str, content: str) -> str:
         """写入文件"""
         try:
-            abs_path = os.path.abspath(path)
-            if not abs_path.startswith(os.getcwd()):
-                return f"Error: Path escapes workspace: {path}"
+            from .workspace import get_workspace
+            workspace = get_workspace()
+            abs_path = workspace.resolve_path(path)
             
             os.makedirs(os.path.dirname(abs_path) or '.', exist_ok=True)
             
@@ -436,15 +446,17 @@ class TeammateManager:
                 f.write(content)
             
             return f"Successfully wrote {len(content)} characters to {path}"
+        except ValueError as e:
+            return f"Error: {str(e)}"
         except Exception as e:
             return f"Error: {type(e).__name__}: {str(e)}"
     
     def _run_edit(self, path: str, old_text: str, new_text: str) -> str:
         """编辑文件"""
         try:
-            abs_path = os.path.abspath(path)
-            if not abs_path.startswith(os.getcwd()):
-                return f"Error: Path escapes workspace: {path}"
+            from .workspace import get_workspace
+            workspace = get_workspace()
+            abs_path = workspace.resolve_path(path)
             
             with open(abs_path, 'r', encoding='utf-8') as f:
                 content = f.read()
@@ -458,6 +470,8 @@ class TeammateManager:
                 f.write(content)
             
             return f"Edited {path}"
+        except ValueError as e:
+            return f"Error: {str(e)}"
         except Exception as e:
             return f"Error: {type(e).__name__}: {str(e)}"
 

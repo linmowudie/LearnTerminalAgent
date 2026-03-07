@@ -15,8 +15,10 @@ from langchain_core.messages import (
 
 from .config import get_config, AgentConfig
 from .tools import get_all_tools
+from .workspace import get_workspace
 from .todo import get_todo_manager, reset_todo
 from .subagent import SubAgent, spawn_subagent
+from .logger import logger_agent
 from .skills import get_skill_loader, reload_skills
 from .context import (
     get_compactor,
@@ -44,6 +46,7 @@ class AgentLoop:
         self,
         config: Optional[AgentConfig] = None,
         system_prompt: Optional[str] = None,
+        workspace_path: Optional[str] = None,  # 新增参数：工作空间路径
     ):
         """
         初始化 Agent
@@ -51,7 +54,20 @@ class AgentLoop:
         Args:
             config: Agent 配置（可选，默认使用全局配置）
             system_prompt: 系统提示词（可选）
+            workspace_path: 工作空间路径（可选，默认当前目录）
         """
+        # 初始化工作空间（在所有其他初始化之前）
+        workspace = get_workspace()
+        # 只有当工作空间未初始化时才初始化
+        if workspace.root is None:
+            logger_agent.info(f"Agent 初始化工作空间：{workspace_path or '当前目录'}")
+            if workspace_path:
+                workspace.initialize(workspace_path)
+            else:
+                workspace.initialize()
+        else:
+            logger_agent.debug(f"工作空间已初始化，复用：{workspace.root}")
+        
         # 加载配置
         self.config = config or get_config()
         
@@ -67,14 +83,38 @@ class AgentLoop:
         self.tools = get_all_tools()
         self.llm_with_tools = self.llm.bind_tools(self.tools)
         
-        # 系统提示
+        # 系统提示 - 强调工作空间限制和工具使用
         if system_prompt:
             self.system_prompt = system_prompt
         else:
             self.system_prompt = (
-                f"You are a helpful coding agent at {os.getcwd()}. "
-                f"Use the provided tools to solve tasks. "
-                f"Act efficiently and don't explain too much."
+                f"You are a helpful coding agent working in the directory: {workspace.root}\n"
+                f"ALL file operations MUST be within this workspace.\n"
+                f"You CANNOT access files outside this directory. If a user requests a file "
+                f"outside the workspace, explain that you can only access files within "
+                f"{workspace.root}.\n"
+                f"\n"
+                f"CRITICAL RULES:\n"
+                f"1. ALWAYS respond with SUBSTANTIVE content - NEVER just say '思考完成' or empty phrases\n"
+                f"2. When user asks to DO something (view, create, edit, run, etc.), YOU MUST:\n"
+                f"   - IMMEDIATELY call the appropriate tool\n"
+                f"   - DO NOT just talk about it - TAKE ACTION\n"
+                f"3. Keep responses concise and direct - avoid lengthy explanations\n"
+                f"4. NEVER repeat what you're about to do - just do it with tools\n"
+                f"\n"
+                f"AVAILABLE TOOLS - USE THEM:\n"
+                f"- `bash` - Run commands, execute scripts, check system info\n"
+                f"- `read_file` - Read file contents (when user asks to view/read)\n"
+                f"- `write_file` - Create or write files (when user asks to create)\n"
+                f"- `edit_file` - Modify existing files (when user asks to edit/update)\n"
+                f"- `list_directory` - View directory contents (when user asks to list/view files)\n"
+                f"\n"
+                f"EXAMPLE BEHAVIOR:\n"
+                f"User: '查看当前文件夹内容' → Agent calls list_directory() IMMEDIATELY\n"
+                f"User: '创建一个 test.txt 文件' → Agent calls write_file() IMMEDIATELY\n"
+                f"User: '运行 python hello.py' → Agent calls bash() IMMEDIATELY\n"
+                f"\n"
+                f"Remember: ACTIONS speak louder than words - USE TOOLS!"
             )
         
         # 消息历史
@@ -84,6 +124,9 @@ class AgentLoop:
         
         # 迭代计数器
         self.iteration_count = 0
+        
+        # 空响应重试计数器（避免无限循环）
+        self._empty_retry_count = 0
         
         # 上下文压缩器
         self.compactor = get_compactor()
@@ -106,8 +149,57 @@ class AgentLoop:
         Returns:
             Agent 的最终响应
         """
+        # 添加工具使用关键词检测
+        action_keywords = {
+            '查看': ['list_directory', 'read_file'],
+            '创建': ['write_file'],
+            '编辑': ['edit_file'],
+            '运行': ['bash'],
+            '执行': ['bash'],
+            '读取': ['read_file'],
+            '列出': ['list_directory'],
+            'delete': ['bash'],  # 需要谨慎处理
+            'create': ['write_file'],
+            'run': ['bash'],
+            'execute': ['bash'],
+            'read': ['read_file'],
+            'list': ['list_directory'],
+            'view': ['list_directory', 'read_file'],
+        }
+        
+        # 检测用户 query 中是否包含行动关键词
+        needs_tool = False
+        suggested_tools = []
+        for keyword, tools in action_keywords.items():
+            if keyword in query or keyword.lower() in query.lower():
+                needs_tool = True
+                suggested_tools.extend(tools)
+        
         # 添加用户消息
         self.messages.append(HumanMessage(content=query))
+        
+        # 如果是前几次对话或检测到行动关键词，添加强化提醒
+        if len(self.messages) <= 10 or needs_tool:
+            reminder = (
+                "\n\n[SYSTEM REMINDER - CRITICAL]\n"
+                "⚠️ YOU MUST USE TOOLS TO TAKE ACTION!\n"
+            )
+            
+            if suggested_tools:
+                reminder += (
+                    f"🎯 Your query suggests you need: {', '.join(set(suggested_tools))}\n"
+                )
+            
+            reminder += (
+                "❌ FORBIDDEN: Empty responses like '思考完成' or just talking\n"
+                "✅ REQUIRED: Call appropriate tools IMMEDIATELY\n"
+                "[/SYSTEM REMINDER]"
+            )
+            
+            # 将提醒添加到用户消息末尾
+            self.messages[-1] = HumanMessage(
+                content=self.messages[-1].content + reminder
+            )
         
         # 循环调用 LLM 直到不需要使用工具
         while True:
@@ -126,13 +218,111 @@ class AgentLoop:
             else:
                 response = self.llm_with_tools.invoke(self.messages)
             
+            # ========== 详细日志：模型响应分析 ==========
+            logger_agent.info(f"[Iteration {self.iteration_count}] LLM 响应分析:")
+            
+            # 1. 记录原始响应内容
+            response_content = response.content[:500] if response.content else "(空内容)"
+            logger_agent.debug(f"  - 响应内容预览：{response_content}")
+            
+            # 2. 记录工具调用信息
+            if response.tool_calls:
+                tool_call_info = []
+                for tc in response.tool_calls:
+                    tool_call_info.append(f"{tc['name']}({tc['args']})")
+                logger_agent.info(f"  - 工具调用：{', '.join(tool_call_info)}")
+            else:
+                logger_agent.warning(f"  - ⚠️ 无工具调用")
+            
+            # 3. 分析响应质量
+            has_content = bool(response.content and response.content.strip())
+            has_tool_calls = bool(response.tool_calls)
+            
+            if not has_content and not has_tool_calls:
+                logger_agent.error(f"  - ❌ 严重问题：既无响应内容也无工具调用！")
+            elif not has_tool_calls and needs_tool:
+                logger_agent.warning(f"  - ⚠️ 警告：用户请求需要工具，但模型未调用")
+                
+                # 检查系统提示词是否被正确传递
+                system_msg = next((m for m in self.messages if isinstance(m, SystemMessage)), None)
+                if system_msg:
+                    logger_agent.debug(f"  - 系统提示词长度：{len(system_msg.content)} 字符")
+                    if "CRITICAL RULES" in system_msg.content:
+                        logger_agent.debug(f"  - ✅ 系统提示词包含 CRITICAL RULES")
+                    else:
+                        logger_agent.error(f"  - ❌ 系统提示词缺少 CRITICAL RULES！")
+                        
+                    if "USE TOOLS" in system_msg.content or "USE THE APPROPRIATE TOOL" in system_msg.content:
+                        logger_agent.debug(f"  - ✅ 系统提示词包含工具使用说明")
+                    else:
+                        logger_agent.error(f"  - ❌ 系统提示词缺少工具使用说明！")
+            
+            # 4. 记录用户消息中的提醒
+            last_human_msg = next((m for m in reversed(self.messages) if isinstance(m, HumanMessage)), None)
+            if last_human_msg and "[SYSTEM REMINDER" in last_human_msg.content:
+                logger_agent.debug(f"  - ✅ 用户消息包含 SYSTEM REMINDER")
+                if "list_directory" in last_human_msg.content or "write_file" in last_human_msg.content:
+                    logger_agent.debug(f"  - ✅ 提醒中包含具体工具名称")
+            # ==========================================
+            
             # 添加 AI 响应到历史
             self.messages.append(response)
             
+            # ========== 详细日志：消息历史统计 ==========
+            logger_agent.debug(f"[消息历史统计]")
+            logger_agent.debug(f"  - 总消息数：{len(self.messages)}")
+            
+            # 统计工具调用历史
+            tool_call_history = []
+            for i, msg in enumerate(self.messages):
+                if hasattr(msg, 'tool_calls') and msg.tool_calls:
+                    for tc in msg.tool_calls:
+                        tool_call_history.append(f"#{i}: {tc['name']}")
+            
+            if tool_call_history:
+                logger_agent.info(f"  - 历史工具调用：{', '.join(tool_call_history)}")
+            else:
+                logger_agent.warning(f"  - ⚠️ 历史消息中无任何工具调用")
+            # ============================================
+            
             # 检查是否有工具调用
             if not response.tool_calls:
-                # 没有工具调用，返回最终响应
-                return response.content or "思考完成。"
+                # 没有工具调用，检查是否应该调用
+                last_human_msg = None
+                for msg in reversed(self.messages):
+                    if isinstance(msg, HumanMessage):
+                        last_human_msg = msg
+                        break
+                
+                # 如果最后一条人类消息包含行动关键词，但 AI 没有调用工具
+                if last_human_msg:
+                    action_words = ['查看', '创建', '编辑', '运行', '执行', '读取', '列出',
+                                   'view', 'create', 'edit', 'run', 'execute', 'read', 'list']
+                    has_action = any(word in last_human_msg.content for word in action_words)
+                    
+                    if has_action:
+                        # 限制重试次数，避免无限循环
+                        if self._empty_retry_count < 2:
+                            logger_agent.warning(
+                                f"检测到行动请求但未调用工具，添加提醒并重试 (第{self._empty_retry_count + 1}次)"
+                            )
+                            # 添加提醒并重试一次
+                            self._add_forced_reminder()
+                            self._empty_retry_count += 1
+                            continue  # 继续循环，再次调用 LLM
+                        else:
+                            logger_agent.warning(
+                                f"已达到最大重试次数，放弃工具调用尝试"
+                            )
+                
+                # 重置重试计数器
+                self._empty_retry_count = 0
+                
+                # 确实不需要工具调用时，返回文本响应
+                if not response.content or response.content.strip() == "思考完成":
+                    return "我已收到您的请求。请告诉我具体需要做什么？"
+                
+                return response.content
             
             # 执行工具调用
             if verbose:
@@ -209,56 +399,116 @@ class AgentLoop:
                 AIMessage(content="Noted background results.")
             )
     
+    def _add_forced_reminder(self):
+        """在最后一条 HumanMessage 后添加强制行动提醒"""
+        reminder = (
+            "\n\n[FORCED REMINDER]\n"
+            "⚠️ YOUR LAST RESPONSE WAS EMPTY!\n"
+            "You MUST:\n"
+            "1. Call appropriate tools to take action\n"
+            "2. Provide substantive response\n"
+            "3. NEVER say '思考完成' or similar empty phrases\n"
+            "[/FORCED REMINDER]"
+        )
+        
+        # 查找最后一条 HumanMessage
+        for i in range(len(self.messages) - 1, -1, -1):
+            if isinstance(self.messages[i], HumanMessage):
+                self.messages[i] = HumanMessage(
+                    content=self.messages[i].content + reminder
+                )
+                break
+    
     def _stream_invoke(self, verbose: bool = True) -> AIMessage:
         """
         流式调用 LLM 并实时打印输出
         
-        Args:
-            verbose: 是否打印详细日志
-            
-        Returns:
-            AI 响应消息
+        采用混合模式：
+        1. 流式显示文本内容（实时体验）
+        2. 重新调用获取完整工具调用（可靠性保证）
+        3. 空响应检测与强制重试
         """
         from langchain_core.messages import AIMessage
         
-        # 用于收集完整响应
-        full_content = ""
-        
-        # ANSI 转义码
+        # ANSI 颜色代码
         STYLE_CYAN = "\033[36m"
         STYLE_YELLOW = "\033[33m"
         STYLE_RESET = "\033[0m"
         
         try:
-            # 使用流式调用 - 只用于显示内容
+            # ========== 详细日志：流式调用开始 ==========
+            logger_agent.debug(f"[流式调用] 开始流式调用 LLM")
+            logger_agent.debug(f"  - 消息历史长度：{len(self.messages)}")
+            
+            # 记录最后一条消息的内容类型
+            last_msg = self.messages[-1] if self.messages else None
+            if last_msg:
+                msg_type = type(last_msg).__name__
+                content_preview = str(last_msg.content)[:200]
+                logger_agent.debug(f"  - 最后消息类型：{msg_type}")
+                logger_agent.debug(f"  - 最后内容预览：{content_preview}...")
+            # ==========================================
+            
+            # 流式调用 - 只用于显示文本
             stream = self.llm_with_tools.stream(self.messages)
             
             if verbose:
                 print(f"\n{STYLE_CYAN}🤖 Agent 思考中:{STYLE_RESET}", end=" ", flush=True)
             
+            full_content = ""
+            has_tool_calls = False
+            chunk_count = 0
+            
             for chunk in stream:
-                # 只收集和显示文本内容
+                chunk_count += 1
+                
+                # 收集文本内容用于显示
                 if hasattr(chunk, 'content') and chunk.content:
                     full_content += chunk.content
                     if verbose:
                         # 逐块打印，模拟打字机效果
                         print(chunk.content, end="", flush=True)
+                
+                # 检测是否有工具调用片段
+                if hasattr(chunk, 'tool_calls') and chunk.tool_calls:
+                    has_tool_calls = True
+                    # ========== 详细日志：检测到工具调用片段 ==========
+                    for tc in chunk.tool_calls:
+                        logger_agent.info(f"[流式 chunk #{chunk_count}] 检测到工具调用片段:")
+                        logger_agent.info(f"  - 工具名称：{tc.get('name', '未知')}")
+                        logger_agent.info(f"  - 参数预览：{str(tc.get('args', '{}'))[:100]}")
+                        logger_agent.info(f"  - ID: {tc.get('id', '无')}")
+                    # ================================================
             
             if verbose:
                 print()  # 换行
             
-            # 注意：流式模式下工具调用可能不完整
-            # 所以我们重新调用一次获取完整的工具调用信息
-            # 但这会增加一次 API 调用，所以只在有内容时执行
-            if full_content.strip():
-                # 使用普通调用获取完整的工具调用信息
+            # ========== 详细日志：流式调用结束统计 ==========
+            logger_agent.info(f"[流式调用] 完成统计:")
+            logger_agent.info(f"  - 总 chunk 数：{chunk_count}")
+            logger_agent.info(f"  - 收集文本长度：{len(full_content)} 字符")
+            logger_agent.info(f"  - 检测到工具调用：{'是' if has_tool_calls else '否'}")
+            # ============================================
+            
+            # 关键改进：如果有工具调用或内容为空，必须重新调用
+            if has_tool_calls or not full_content.strip():
+                # 重新调用获取完整的工具调用信息
                 full_response = self.llm_with_tools.invoke(self.messages)
+                
+                # 验证响应质量
+                if not full_response.tool_calls and not full_response.content:
+                    # 如果仍然为空，添加强制提醒并重试
+                    logger_agent.warning("LLM 返回空响应，添加强制提醒并重试")
+                    self._add_forced_reminder()
+                    full_response = self.llm_with_tools.invoke(self.messages)
+                
                 return full_response
             else:
+                # 纯文本回答，直接使用流式结果
                 return AIMessage(content=full_content)
-            
+                
         except Exception as e:
-            # 如果流式失败，降级到普通调用
+            # 流式失败，降级到普通调用
             if verbose:
                 print(f"\n{STYLE_YELLOW}⚠️ 流式输出失败，切换到普通模式：{e}{STYLE_RESET}")
             return self.llm_with_tools.invoke(self.messages)
@@ -294,7 +544,8 @@ class AgentLoop:
         """重置 Agent 状态"""
         self.messages = [SystemMessage(content=self.system_prompt)]
         self.iteration_count = 0
-        self.compactor.reset()
+        self._empty_retry_count = 0
+        # self.compactor.reset()  # ContextCompactor 没有 reset 方法
     
     def get_history(self) -> List:
         """获取消息历史"""

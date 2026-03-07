@@ -10,6 +10,7 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Optional, List
 from dotenv import load_dotenv
+from .logger import logger_config
 
 
 @dataclass
@@ -101,19 +102,34 @@ class AgentConfig:
         从 JSON 文件加载配置
         
         Args:
-            config_path: 配置文件路径（可选，默认 LearnAgent/config.json）
-            
+            config_path: 配置文件路径（可选，默认在以下位置查找）
+                        1. 命令行指定的路径
+                        2. ./config/config.json (项目根目录)
+                        3. src/learn_agent/config.json (开发目录)
+                        
         Returns:
             AgentConfig 实例
         """
         if config_path is None:
-            # 默认路径
-            config_path = Path(__file__).parent / "config.json"
+            # 尝试多个可能的路径
+            possible_paths = [
+                Path(__file__).parent.parent.parent / "config" / "config.json",  # ./config/config.json
+                Path(__file__).parent / "config.json",  # src/learn_agent/config.json
+            ]
+            
+            for path in possible_paths:
+                if path.exists():
+                    config_path = path
+                    logger_config.info(f"找到配置文件：{config_path}")
+                    break
+            
+            if config_path is None or not Path(config_path).exists():
+                logger_config.debug(f"所有可能的配置文件都不存在")
+                print(f"Warning: Config file not found in common locations.")
+                print("Falling back to environment variables.")
+                return cls.from_env()
         
-        if not Path(config_path).exists():
-            print(f"Warning: Config file not found: {config_path}")
-            print("Falling back to environment variables.")
-            return cls.from_env()
+        logger_config.info(f"从 JSON 加载配置：{config_path}")
         
         try:
             with open(config_path, 'r', encoding='utf-8') as f:
@@ -153,10 +169,12 @@ class AgentConfig:
                 worktree_base_ref=data.get("worktree", {}).get("base_ref", "HEAD"),
             )
             
-            print(f"✓ Loaded config from: {config_path}")
+            logger_config.info(f"配置加载成功：{config_path}")
+            print(f"[OK] Loaded config from: {config_path}")
             return config
-        
+            
         except Exception as e:
+            logger_config.error(f"加载配置失败：{e}")
             print(f"Error loading config: {e}")
             print("Falling back to environment variables.")
             return cls.from_env()
@@ -210,7 +228,7 @@ class AgentConfig:
         with open(config_path, 'w', encoding='utf-8') as f:
             json.dump(self.to_dict(), f, indent=2, ensure_ascii=False)
         
-        print(f"✓ Saved config to: {config_path}")
+        print(f"[OK] Saved config to: {config_path}")
     
     def validate(self) -> bool:
         """验证配置有效性"""
@@ -227,11 +245,11 @@ class AgentConfig:
         print("\n" + "=" * 60)
         print("LearnAgent 配置")
         print("=" * 60)
-        print(f"✓ 模型：{self.model_name}")
-        print(f"✓ Base URL: {self.base_url}")
-        print(f"✓ API Key: {self.api_key[:10]}...{self.api_key[-4:]}")
-        print(f"✓ Max Tokens: {self.max_tokens}")
-        print(f"✓ Timeout: {self.timeout}s")
+        print(f"[OK] 模型：{self.model_name}")
+        print(f"[OK] Base URL: {self.base_url}")
+        print(f"[OK] API Key: {self.api_key[:10]}...{self.api_key[-4:]}")
+        print(f"[OK] Max Tokens: {self.max_tokens}")
+        print(f"[OK] Timeout: {self.timeout}s")
         print("=" * 60 + "\n")
 
 

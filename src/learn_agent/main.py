@@ -12,6 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from learn_agent.config import get_config
 from learn_agent.agent import AgentLoop
+from learn_agent.logger import logger_workspace
 
 
 def print_banner():
@@ -156,8 +157,40 @@ def _format_response_card(content: str) -> str:
 def main():
     """主程序入口"""
     
+    import sys
+    import os
+    from pathlib import Path
+    
+    # Windows 下设置 UTF-8 编码
+    if sys.platform == 'win32':
+        try:
+            os.system('chcp 65001 >nul')  # 设置控制台为 UTF-8
+        except:
+            pass
+    
+    # 从命令行参数获取工作空间路径
+    workspace_path = None
+    if len(sys.argv) > 1:
+        workspace_path = sys.argv[1]
+        print(f"\n[WORKSPACE] 使用工作空间：{workspace_path}\n")
+    
+    # 初始化工作空间（只初始化一次）
+    from learn_agent.workspace import get_workspace
+    workspace = get_workspace()
+    
+    # 检查工作空间是否已经在其他地方被初始化
+    if workspace.root is not None:
+        logger_workspace.debug(f"工作空间已在别处初始化：{workspace.root}")
+        # 如果用户指定了不同的工作空间，需要重新初始化
+        if workspace_path and str(workspace.root) != workspace_path:
+            logger_workspace.info(f"用户指定了不同的工作空间：{workspace_path}，重新初始化")
+            workspace.initialize(workspace_path, force=True)
+    else:
+        logger_workspace.info(f"初始化工作空间：{workspace_path or '当前目录'}")
+        workspace.initialize(workspace_path)
+    
     try:
-        # 加载并打印配置
+        # 加载并打印配置（此时工作空间已设置，不会影响到）
         config = get_config()
         config.print_info()
         
@@ -171,8 +204,8 @@ def main():
     # 打印欢迎横幅
     print_banner()
     
-    # 创建 Agent 实例
-    agent = AgentLoop()
+    # 创建 Agent 实例，传入工作空间路径
+    agent = AgentLoop(workspace_path=workspace_path)
     
     # 主循环
     print("\n提示：输入 /help 查看帮助，/quit 或 Ctrl+D 退出\n")

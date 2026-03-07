@@ -9,20 +9,25 @@ import subprocess
 from typing import Optional
 from langchain_core.tools import tool
 from .config import get_config
+from .workspace import get_workspace
+from .logger import logger_tools, timing
 
 
 @tool
 def bash(command: str) -> str:
     """
-    运行 shell 命令并返回输出
+    运行 shell 命令 - 当用户要求“运行”、“执行”命令或脚本时使用
     
     Args:
         command: 要执行的 shell 命令
         
     Returns:
         命令的输出结果
+    
+    USAGE TRIGGER: User says "运行...", "执行...", "run command", "execute..."
     """
     config = get_config()
+    workspace = get_workspace()  # 获取工作空间
     
     # 安全检查：阻止危险命令
     for pattern in config.dangerous_patterns:
@@ -33,7 +38,7 @@ def bash(command: str) -> str:
         result = subprocess.run(
             command,
             shell=True,
-            cwd=os.getcwd(),
+            cwd=workspace.root,  # 强制在工作空间根目录执行
             capture_output=True,
             text=True,
             timeout=config.timeout
@@ -57,7 +62,7 @@ def bash(command: str) -> str:
 @tool
 def read_file(path: str, limit: Optional[int] = None) -> str:
     """
-    读取文件内容
+    读取文件内容 - 当用户要求“读取”、“查看...内容”时使用
     
     Args:
         path: 文件路径
@@ -65,12 +70,13 @@ def read_file(path: str, limit: Optional[int] = None) -> str:
         
     Returns:
         文件内容
+    
+    USAGE TRIGGER: User says "读取...", "查看...的内容", "read file", "show me..."
     """
     try:
-        # 安全检查：确保路径在工作目录内
-        abs_path = os.path.abspath(path)
-        if not abs_path.startswith(os.getcwd()):
-            return f"Error: Path escapes workspace: {path}"
+        workspace = get_workspace()
+        # 使用工作空间管理器验证路径
+        abs_path = workspace.resolve_path(path)
         
         with open(abs_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
@@ -84,6 +90,9 @@ def read_file(path: str, limit: Optional[int] = None) -> str:
             
     except FileNotFoundError:
         return f"Error: File not found: {path}"
+    except ValueError as e:
+        # 路径越界错误
+        return f"Error: {str(e)}"
     except Exception as e:
         return f"Error: {type(e).__name__}: {str(e)}"
 
@@ -91,7 +100,7 @@ def read_file(path: str, limit: Optional[int] = None) -> str:
 @tool
 def write_file(path: str, content: str) -> str:
     """
-    写入文件内容
+    写入文件内容 - 当用户要求“创建”、“新建”、“写入”文件时使用
     
     Args:
         path: 文件路径
@@ -99,12 +108,12 @@ def write_file(path: str, content: str) -> str:
         
     Returns:
         操作结果
+    
+    USAGE TRIGGER: User says "创建...文件", "新建...", "write to file", "create..."
     """
     try:
-        # 安全检查：确保路径在工作目录内
-        abs_path = os.path.abspath(path)
-        if not abs_path.startswith(os.getcwd()):
-            return f"Error: Path escapes workspace: {path}"
+        workspace = get_workspace()
+        abs_path = workspace.resolve_path(path)
         
         # 创建父目录（如果不存在）
         os.makedirs(os.path.dirname(abs_path) or '.', exist_ok=True)
@@ -114,6 +123,8 @@ def write_file(path: str, content: str) -> str:
         
         return f"Successfully wrote {len(content)} characters to {path}"
         
+    except ValueError as e:
+        return f"Error: {str(e)}"
     except Exception as e:
         return f"Error: {type(e).__name__}: {str(e)}"
 
@@ -132,12 +143,9 @@ def edit_file(file_path: str, original_text: str, new_text: str) -> str:
         操作结果
     """
     try:
-        # 安全检查：确保路径在工作目录内
-        abs_path = os.path.abspath(file_path)
-        if not abs_path.startswith(os.getcwd()):
-            return f"Error: Path escapes workspace: {file_path}"
+        workspace = get_workspace()
+        abs_path = workspace.resolve_path(file_path)
         
-        # 检查文件是否存在
         if not os.path.exists(abs_path):
             return f"Error: File not found: {file_path}"
         
@@ -160,6 +168,8 @@ def edit_file(file_path: str, original_text: str, new_text: str) -> str:
         change_desc = f"+{changes}" if changes > 0 else str(changes)
         return f"Successfully edited {file_path}: replaced {len(original_text)} chars with {len(new_text)} chars (net change: {change_desc} chars)"
         
+    except ValueError as e:
+        return f"Error: {str(e)}"
     except Exception as e:
         return f"Error: {type(e).__name__}: {str(e)}"
 
@@ -200,21 +210,21 @@ def format_html_output(content: str, style: str = "default") -> str:
 @tool
 def list_directory(path: str = ".") -> str:
     """
-    列出目录内容
+    列出目录内容 - 当用户要求“查看”、“列出”文件或文件夹时使用
     
     Args:
         path: 目录路径（默认当前目录）
         
     Returns:
         目录中的文件和文件夹列表
+    
+    USAGE TRIGGER: User says "查看...", "列出...", "show files", "list directory"
     """
     try:
-        abs_path = os.path.abspath(path)
+        workspace = get_workspace()
+        abs_path = workspace.resolve_path(path)
         
-        if not abs_path.startswith(os.getcwd()):
-            return f"Error: Path escapes workspace: {path}"
-        
-        if not os.path.exists(abs_path):
+        if not abs_path.exists():
             return f"Error: Directory not found: {path}"
         
         items = os.listdir(abs_path)
@@ -224,13 +234,14 @@ def list_directory(path: str = ".") -> str:
         files = []
         
         for item in sorted(items):
-            item_path = os.path.join(abs_path, item)
-            if os.path.isdir(item_path):
-                dirs.append(f"📁 {item}/")
+            item_path = abs_path / item
+            if item_path.is_dir():
+                dirs.append(f"[DIR] {item}/")
             else:
-                files.append(f"📄 {item}")
+                files.append(f"[FILE] {item}")
         
-        result = [f"Directory: {abs_path}"]
+        rel_path = workspace.get_relative_path(abs_path)
+        result = [f"Directory: {rel_path}"]
         if dirs:
             result.append("\nFolders:")
             result.extend(dirs)
@@ -240,6 +251,8 @@ def list_directory(path: str = ".") -> str:
         
         return '\n'.join(result)
         
+    except ValueError as e:
+        return f"Error: {str(e)}"
     except Exception as e:
         return f"Error: {type(e).__name__}: {str(e)}"
 

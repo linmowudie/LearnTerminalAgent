@@ -10,6 +10,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 from .config import get_config, AgentConfig
 from .tools import get_all_tools
+from .workspace import get_workspace
 
 
 class SubAgent:
@@ -32,6 +33,9 @@ class SubAgent:
             parent_config: 父代理配置
             system_prompt: 系统提示词
         """
+        # 继承主代理的工作空间（关键！）
+        self.workspace = get_workspace()
+        
         # 使用父代理的配置或默认配置
         self.config = parent_config or get_config()
         
@@ -47,14 +51,15 @@ class SubAgent:
         self.tools = get_all_tools()
         self.llm_with_tools = self.llm.bind_tools(self.tools)
         
-        # 系统提示
+        # 系统提示 - 包含工作空间信息
         if system_prompt:
             self.system_prompt = system_prompt
         else:
             self.system_prompt = (
-                f"You are a coding subagent at {os.getcwd()}. "
+                f"You are a coding subagent working on a task.\n"
+                f"Your workspace is: {self.workspace.root}\n"
+                f"All file operations must be within this workspace.\n"
                 f"Complete the given task efficiently. "
-                f"Use the provided tools to accomplish your goals. "
                 f"When done, provide a concise summary of what you accomplished."
             )
         

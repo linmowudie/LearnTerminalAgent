@@ -580,6 +580,71 @@ Error: Command timeout after 120s
 
 ---
 
+## 🔒 工作空间沙箱
+
+### 什么是工作空间？
+
+工作空间是 LLM 可以访问的唯一目录范围。就像代码编辑器打开特定文件夹一样，LLM 只能在该文件夹及其子目录内进行文件操作。
+
+### 设置工作空间
+
+**方法 1：使用当前目录**
+```bash
+cd F:\ProjectCode\MyProject
+python -m learn_agent.main
+# 工作空间自动设置为 F:\ProjectCode\MyProject
+```
+
+**方法 2：指定工作空间路径**
+```bash
+python -m learn_agent.main F:\ProjectCode\AnotherProject
+# 工作空间设置为 F:\ProjectCode\AnotherProject
+```
+
+### 路径安全检查
+
+所有文件操作都会进行路径验证：
+
+```python
+# ✅ 允许：工作空间内的文件
+read_file("src/main.py")
+write_file("data/output.txt", "content")
+list_directory("src")
+
+# ❌ 禁止：工作空间外的文件
+read_file("/etc/passwd")  
+# Error: 路径越界：/etc/passwd
+# 工作空间：F:\ProjectCode\MyProject
+# 目标路径：/etc/passwd
+
+read_file("../../secret.txt")
+# Error: 路径越界：../../secret.txt
+```
+
+### 命令执行
+
+所有 shell 命令都在工作空间根目录执行：
+
+```bash
+# 自动在工作空间根目录执行
+bash "ls -la"
+bash "python src/main.py"
+```
+
+### 错误处理
+
+当尝试访问工作空间外的文件时，会收到清晰的错误提示：
+
+```
+Error: 路径越界：<请求的路径>
+工作空间：<工作空间根目录>
+目标路径：<解析后的绝对路径>
+```
+
+这有助于理解为什么某些操作被拒绝。
+
+---
+
 ## 📊 工具分类总结
 
 | 类别 | 工具数量 | 模块 |
