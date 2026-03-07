@@ -34,7 +34,7 @@
   "agent": {
     "api_key": "",
     "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-    "model_name": "qwen3.5-flash",
+    "model_name": "qwen3.5-plus",
     "max_tokens": 8000,
     "timeout": 120,
     "max_iterations": 50

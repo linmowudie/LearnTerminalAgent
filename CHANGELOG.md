@@ -7,6 +7,68 @@
 
 ---
 
+## [2.1.0] - 2026-03-07
+
+### 新增功能 ✨
+
+#### 模型思考加载动画
+- 在 `_stream_invoke()` 方法中添加后台线程动画显示
+- 使用 Unicode Braille 字符实现旋转效果（⠋→⠙→⠹→⠸→⠼→⠴→⠦→⠧→⠇→⠏）
+- 收到首个响应 chunk 时自动停止动画并显示"思考完毕"
+- 提供视觉化等待反馈，提升用户体验
+
+#### 工具调用策略优化
+- 细化系统提示词中的工具使用策略为三类场景：
+  - **简单问候/聊天**：可以直接回复，无需工具
+  - **信息收集任务**：必须立即调用 `read_file` 或 `list_directory`
+  - **执行任务**：必须立即调用相应工具
+- 添加 Scenario 0 示例说明问候场景无需工具
+- 明确关键规则：如果请求暗示需要查看文件/目录，必须先调用工具
+
+### 优化改进 🛠️
+
+#### 配置加载逻辑修复
+- 修复 `from_json()` 方法中配置文件查找路径错误
+- 从 `Path(__file__).parent.parent.parent` 改为 `.parent.parent.parent.parent`
+- 现在能正确找到 `config/config.json` 文件
+
+#### 环境变量优先级优化
+- 优化配置加载优先级：环境变量 > 配置文件 > 默认值
+- 在 `from_json()` 方法中添加环境变量覆盖逻辑：
+  - `base_url`: `os.getenv("ANTHROPIC_BASE_URL")` 优先
+  - `model_name`: `os.getenv("MODEL_ID")` 优先
+- 恢复 `.env` 文件支持但使用 `override=False`，不覆盖系统环境变量
+
+#### 重复输出问题修复
+- 在 `AgentLoop` 类中添加 `_has_tool_calls` 标志
+- 在 `run()` 开始时重置标志，检测到工具调用时设置标志
+- 在 `main.py` 中检查标志，有工具调用时不显示响应卡片
+- 避免 verbose 模式输出和响应卡片的重复显示
+
+### 文档更新 📝
+
+#### 系统提示词增强
+- 重写 CRITICAL MINDSET 部分，强调验证Before Acting 原则
+- 添加 AMBIGUITY HANDLING 规则，处理模糊请求
+- 完善 SAFETY PROTOCOL，明确确认步骤
+- 扩展 EXAMPLE BEHAVIOR，增加多个场景示例
+
+### 技术细节 🔧
+
+#### 修改的文件
+- `src/learn_agent/core/agent.py` (+138 行)
+  - `_stream_invoke()`: 添加加载动画线程
+  - `system_prompt`: 重写提示词逻辑
+  - `run()`: 添加工具调用标志管理
+- `src/learn_agent/core/config.py` (+15 行)
+  - `from_env()`: 修改 `.env` 加载策略
+  - `from_json()`: 修复路径查找和优先级
+- `src/learn_agent/core/main.py` (+11 行)
+  - 主循环：添加工具调用标志检查
+- `config/config.json`: 更新模型名称为 `qwen3.5-plus`
+
+---
+
 ## [2.0.0] - 2026-03-07
 
 ### 重大变更 🚨

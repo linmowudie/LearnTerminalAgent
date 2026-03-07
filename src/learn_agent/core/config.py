@@ -59,10 +59,10 @@ class AgentConfig:
     
     @classmethod
     def from_env(cls) -> "AgentConfig":
-        """从环境变量加载配置"""
+        """从环境变量加载配置（支持 .env 文件）"""
         
-        # 尝试加载 .env 文件
-        load_dotenv(override=True)
+        # 尝试加载 .env 文件（如果存在）
+        load_dotenv(override=False)  # override=False 表示不覆盖已存在的环境变量
         
         # 支持多种 API Key 环境变量名
         api_key = (
@@ -113,7 +113,7 @@ class AgentConfig:
         if config_path is None:
             # 尝试多个可能的路径
             possible_paths = [
-                Path(__file__).parent.parent.parent / "config" / "config.json",  # ./config/config.json
+                Path(__file__).parent.parent.parent.parent / "config" / "config.json",  # ./config/config.json (从 src/learn_agent/core/ 往上三层)
                 Path(__file__).parent / "config.json",  # src/learn_agent/config.json
             ]
             
@@ -135,7 +135,7 @@ class AgentConfig:
             with open(config_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
             
-            # 合并 JSON 配置和环境变量
+            # 合并 JSON 配置和环境变量（环境变量优先级更高）
             api_key = (
                 os.getenv("QWEN_API_KEY") or
                 os.getenv("ANTHROPIC_API_KEY") or
@@ -150,8 +150,9 @@ class AgentConfig:
             
             config = cls(
                 api_key=api_key,
-                base_url=data.get("agent", {}).get("base_url", "https://dashscope.aliyuncs.com/compatible-mode/v1"),
-                model_name=data.get("agent", {}).get("model_name", "qwen3.5-flash"),
+                # 环境变量优先，其次配置文件，最后默认值
+                base_url=os.getenv("ANTHROPIC_BASE_URL") or data.get("agent", {}).get("base_url", "https://dashscope.aliyuncs.com/compatible-mode/v1"),
+                model_name=os.getenv("MODEL_ID") or data.get("agent", {}).get("model_name", "qwen3.5-flash"),
                 max_tokens=data.get("agent", {}).get("max_tokens", 8000),
                 timeout=data.get("agent", {}).get("timeout", 120),
                 max_iterations=data.get("agent", {}).get("max_iterations", 50),

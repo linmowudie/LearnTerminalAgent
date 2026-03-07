@@ -87,35 +87,77 @@ class AgentLoop:
         if system_prompt:
             self.system_prompt = system_prompt
         else:
-            self.system_prompt = (
-                f"You are a helpful coding agent working in the directory: {workspace.root}\n"
-                f"ALL file operations MUST be within this workspace.\n"
-                f"You CANNOT access files outside this directory. If a user requests a file "
-                f"outside the workspace, explain that you can only access files within "
-                f"{workspace.root}.\n"
-                f"\n"
-                f"CRITICAL RULES:\n"
-                f"1. ALWAYS respond with SUBSTANTIVE content - NEVER just say '思考完成' or empty phrases\n"
-                f"2. When user asks to DO something (view, create, edit, run, etc.), YOU MUST:\n"
-                f"   - IMMEDIATELY call the appropriate tool\n"
-                f"   - DO NOT just talk about it - TAKE ACTION\n"
-                f"3. Keep responses concise and direct - avoid lengthy explanations\n"
-                f"4. NEVER repeat what you're about to do - just do it with tools\n"
-                f"\n"
-                f"AVAILABLE TOOLS - USE THEM:\n"
-                f"- `bash` - Run commands, execute scripts, check system info\n"
-                f"- `read_file` - Read file contents (when user asks to view/read)\n"
-                f"- `write_file` - Create or write files (when user asks to create)\n"
-                f"- `edit_file` - Modify existing files (when user asks to edit/update)\n"
-                f"- `list_directory` - View directory contents (when user asks to list/view files)\n"
-                f"\n"
-                f"EXAMPLE BEHAVIOR:\n"
-                f"User: '查看当前文件夹内容' → Agent calls list_directory() IMMEDIATELY\n"
-                f"User: '创建一个 test.txt 文件' → Agent calls write_file() IMMEDIATELY\n"
-                f"User: '运行 python hello.py' → Agent calls bash() IMMEDIATELY\n"
-                f"\n"
-                f"Remember: ACTIONS speak louder than words - USE TOOLS!"
-            )
+           self.system_prompt = (
+                    f"You are a helpful coding agent working in the directory: {workspace.root}\n"
+                    f"ALL file operations MUST be within this workspace.\n"
+                    f"You CANNOT access files outside this directory.\n"
+                    f"\n"
+                    f"CRITICAL MINDSET:\n"
+                    f"1. **Verify Before Acting**: Never assume a file's purpose based solely on its filename. "
+                    f"If a task involves judging file relevance (e.g., 'delete unrelated files'), you MUST first "
+                    f"use `read_file` to inspect the content before making a decision.\n"
+                    f"2. **Ambiguity Handling**: If a user request is vague (e.g., 'clean up', 'delete unused'), "
+                    f"DO NOT guess. List the potential targets and your reasoning, then ask for specific confirmation.\n"
+                    f"3. **Safety First**: Destructive actions are irreversible. When in doubt, ASK.\n"
+                    f"\n"
+                    f"OPERATIONAL RULES:\n"
+                    f"1. ALWAYS respond with SUBSTANTIVE content - NEVER just say '思考完成' or empty phrases.\n"
+                    f"2. TOOL USAGE STRATEGY:\n"
+                    f"   - **Simple Greetings/Chat** (你好，hello, 谢谢): You can respond DIRECTLY without tools.\n"
+                    f"   - **Information Gathering** (查看，检查，读取代码): Use `read_file` or `list_directory` IMMEDIATELY.\n"
+                    f"   - **Execution Tasks** (创建，删除，修改，运行): Call the appropriate tool WITHOUT delay.\n"
+                    f"   - CRITICAL: If user request IMPLIES needing to check files/directories, USE TOOLS FIRST before responding.\n"
+                    f"   - DO NOT describe what you will do in text; just execute the tool.\n"
+                    f"3. CRITICAL SAFETY PROTOCOL - File Modification Confirmation:\n"
+                    f"   BEFORE executing ANY destructive operation (delete, edit, overwrite):\n"
+                    f"   - STEP 1: Verify the target (read content if necessary to ensure it matches user intent).\n"
+                    f"   - STEP 2: Present your finding and the proposed action to the user.\n"
+                    f"   - STEP 3: Wait for EXPLICIT confirmation ('yes', 'confirm', '确定', '是的').\n"
+                    f"   - STEP 4: ONLY THEN execute the destructive tool.\n"
+                    f"\n"
+                    f"   DESTRUCTIVE operations requiring this protocol:\n"
+                    f"   - Deleting files\n"
+                    f"   - Editing/modifying existing files\n"
+                    f"   - Overwriting files\n"
+                    f"\n"
+                    f"   SAFE operations (NO confirmation needed):\n"
+                    f"   - Reading files, Listing directories, Creating NEW files, Running safe read-only commands.\n"
+                    f"\n"
+                    f"AVAILABLE TOOLS:\n"
+                    f"- `bash`: Run commands, scripts, system info.\n"
+                    f"- `read_file`: Read file contents (CRITICAL for verifying file purpose).\n"
+                    f"- `write_file`: Create or write files.\n"
+                    f"- `edit_file`: Modify existing files.\n"
+                    f"- `list_directory`: View directory contents.\n"
+                    f"\n"
+                    f"EXAMPLE BEHAVIOR SCENARIOS:\n"
+                    f"\n"
+                    f"[Scenario 0: Simple Greeting - NO Tool Needed]\n"
+                    f"User: '你好' or 'Hello'\n"
+                    f"Agent: [Responds directly with a friendly greeting, NO tool calls]\n"
+                    f"\n"
+                    f"[Scenario 1: Simple Task]\n"
+                    f"User: '查看当前文件夹内容'\n"
+                    f"Agent: [Calls list_directory() IMMEDIATELY]\n"
+                    f"\n"
+                    f"[Scenario 2: Dangerous Task with Ambiguity - THE KEY FIX]\n"
+                    f"User: '删除与该文件夹名无关的文件'\n"
+                    f"Agent Thought: I see 'snake_game.py' and 'logistic_regression.ipynb'. Folder is 'LogisticRegression'. "
+                    f"'snake_game.py' might be unrelated, BUT it could be a dataset generator. I must check content first.\n"
+                    f"Agent Action: [Calls read_file('snake_game.py')]\n"
+                    f"Agent Response (after reading): '我检查了 snake_game.py，发现它是一个纯游戏脚本，确实与逻辑回归算法无关。' + "
+                    f"'我计划删除它。请确认是否继续？(Yes/No)'\n"
+                    f"User: '确定'\n"
+                    f"Agent: [Calls bash('del snake_game.py')]\n"
+                    f"\n"
+                    f"[Scenario 3: Direct Deletion Request]\n"
+                    f"User: '删除 test.txt'\n"
+                    f"Agent: '确定要删除 test.txt 吗？此操作不可恢复。'\n"
+                    f"User: '确定'\n"
+                    f"Agent: [Calls bash('del test.txt')]\n"
+                    f"\n"
+                    f"Remember: **Reading a file to verify safety IS an action.** Do not skip verification steps even if you want to be fast."
+                )
         
         # 消息历史
         self.messages: List = [
@@ -134,6 +176,9 @@ class AgentLoop:
         # 启用自动压缩
         self.auto_compact_enabled = True
         
+        # 工具调用标志（用于主循环判断是否显示卡片）
+        self._has_tool_calls = False
+        
         # 后台任务通知
         self._process_background_notifications()
     
@@ -149,6 +194,9 @@ class AgentLoop:
         Returns:
             Agent 的最终响应
         """
+        # 重置工具调用标志
+        self._has_tool_calls = False
+        
         # 添加工具使用关键词检测
         action_keywords = {
             '查看': ['list_directory', 'read_file'],
@@ -429,11 +477,29 @@ class AgentLoop:
         3. 空响应检测与强制重试
         """
         from langchain_core.messages import AIMessage
+        import sys
+        import time
+        import threading
         
         # ANSI 颜色代码
         STYLE_CYAN = "\033[36m"
         STYLE_YELLOW = "\033[33m"
         STYLE_RESET = "\033[0m"
+        
+        # 加载动画控制标志
+        loading_stop_event = threading.Event()
+        
+        def show_loading():
+            """在后台显示加载动画"""
+            loading_chars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+            idx = 0
+            while not loading_stop_event.is_set():
+                # 使用 \r 回到行首，然后重新打印文字和动画
+                print(f"\r{STYLE_CYAN}🤖 Agent 思考中:{STYLE_RESET} {loading_chars[idx % len(loading_chars)]}", end="", flush=True)
+                idx += 1
+                time.sleep(0.1)
+            # 清除动画，显示思考完毕并换行
+            print(f"\r{STYLE_CYAN}🤖 Agent 思考中:{STYLE_RESET} 思考完毕{STYLE_RESET}\n", end="", flush=True)
         
         try:
             # ========== 详细日志：流式调用开始 ==========
@@ -453,14 +519,23 @@ class AgentLoop:
             stream = self.llm_with_tools.stream(self.messages)
             
             if verbose:
-                print(f"\n{STYLE_CYAN}🤖 Agent 思考中:{STYLE_RESET}", end=" ", flush=True)
+                # 启动加载动画线程（动画中会包含"🤖 Agent 思考中:"文字）
+                loading_thread = threading.Thread(target=show_loading, daemon=True)
+                loading_thread.start()
             
             full_content = ""
             has_tool_calls = False
             chunk_count = 0
+            first_chunk_received = False
             
             for chunk in stream:
                 chunk_count += 1
+                
+                # 第一个 chunk 到达时，停止加载动画
+                if verbose and not first_chunk_received:
+                    first_chunk_received = True
+                    loading_stop_event.set()  # 停止动画
+                    loading_thread.join(timeout=0.2)  # 等待线程结束
                 
                 # 收集文本内容用于显示
                 if hasattr(chunk, 'content') and chunk.content:
@@ -492,6 +567,9 @@ class AgentLoop:
             
             # 关键改进：如果有工具调用或内容为空，必须重新调用
             if has_tool_calls or not full_content.strip():
+                # 标记有工具调用（用于主循环判断是否显示卡片）
+                self._has_tool_calls = True
+                
                 # 重新调用获取完整的工具调用信息
                 full_response = self.llm_with_tools.invoke(self.messages)
                 

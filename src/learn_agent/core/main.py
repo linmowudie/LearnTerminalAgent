@@ -279,9 +279,14 @@ def main():
             response = agent.run(query, verbose=True, stream=True)
             
             # 打印响应 - 使用 HTML 样式格式化
-            if response:
-                # 使用 ANSI 转义码模拟 HTML 卡片效果
-                print(f"\n{_format_response_card(response)}\n")
+            # 只有当响应包含实际内容且不是错误信息时才显示卡片
+            # 工具调用的过程已经在 verbose 模式中输出，不需要重复显示
+            if response and len(response.strip()) > 0 and not any(x in response for x in ['Error:', '❌', '我已收到您的请求']):
+                # 检查是否已经有工具调用输出（通过日志判断）
+                # 如果有工具调用，verbose 模式已经显示了过程和结果，不需要再显示卡片
+                # 只有纯文本回答才需要显示卡片
+                if not hasattr(agent, '_has_tool_calls') or not agent._has_tool_calls:
+                    print(f"\n{_format_response_card(response)}\n")
         
         except KeyboardInterrupt:
             print("\n\n👋 中断退出\n")
