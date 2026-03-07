@@ -15,8 +15,8 @@ print(f"测试目录：{test_dir}")
 
 sys.path.insert(0, str(Path(__file__).parent / 'src'))
 
-from learn_agent.workspace import WorkspaceManager
-from learn_agent.tools import list_directory, write_file, read_file
+from learn_agent.infrastructure.workspace import WorkspaceManager
+from learn_agent.tools.tools import list_directory, write_file, read_file
 
 print("\n1. 初始化工作空间为测试目录")
 workspace = WorkspaceManager()
@@ -70,7 +70,7 @@ except Exception as e:
 
 print("\n6. 测试 bash 命令执行...")
 try:
-    from learn_agent.tools import bash
+    from learn_agent.tools.tools import bash
     result = bash.invoke({"command": "dir" if sys.platform == 'win32' else "ls"})
     print(f"✅ bash 命令成功！输出长度：{len(result)} 字符")
     print(f"   前 100 字符：{result[:100]}...")

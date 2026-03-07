@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import List, Optional, Dict
 from langchain_core.tools import tool
 
-from .task_system import get_task_manager
+from ..tools.task_system import get_task_manager
 
 
 # 全局锁
@@ -24,7 +24,7 @@ _claim_lock = threading.Lock()
 
 def scan_unclaimed_tasks() -> List[dict]:
     """扫描未认领的任务"""
-    from .task_system import get_task_manager
+    from ..tools.task_system import get_task_manager
     manager = get_task_manager()
     
     # 获取所有任务

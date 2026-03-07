@@ -14,7 +14,7 @@ import os
 # 添加项目根目录到 Python 路径
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from src.learn_agent.agent import AgentLoop
+from src.learn_agent.core.agent import AgentLoop
 
 
 def test_list_directory():

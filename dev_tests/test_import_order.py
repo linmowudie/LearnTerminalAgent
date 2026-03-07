@@ -7,14 +7,14 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent / 'src'))
 
 print("1. 导入前")
-from learn_agent.workspace import WorkspaceManager
+from learn_agent.infrastructure.workspace import WorkspaceManager
 
 print("2. 导入后，检查 workspace 状态")
 workspace = WorkspaceManager()
 print(f"   workspace._workspace_root = {workspace._workspace_root}")
 
 print("\n3. 现在导入 tools")
-from learn_agent.tools import bash
+from learn_agent.tools.tools import bash
 
 print("4. 再次检查 workspace 状态")
 print(f"   workspace._workspace_root = {workspace._workspace_root}")

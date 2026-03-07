@@ -15,7 +15,7 @@ project_root = Path(__file__).parent.parent / "src"
 sys.path.insert(0, str(project_root))
 
 try:
-    from learn_agent.main import main
+    from learn_agent.core.main import main
     main()
 except ImportError as e:
     print(f"Error: Cannot import learn_agent module: {e}")

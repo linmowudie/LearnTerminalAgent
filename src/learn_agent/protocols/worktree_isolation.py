@@ -17,7 +17,7 @@ from typing import Dict, List, Optional
 from langchain_core.tools import tool
 
 # 使用 ProjectConfig 管理路径
-from .project_config import get_project_config
+from ..infrastructure.project_config import get_project_config
 PROJECT = get_project_config()
 REPO_ROOT = PROJECT.project_root
 WORKDIR = PROJECT.data_dir
@@ -165,7 +165,7 @@ class WorktreeManager:
             
             # 绑定任务
             if task_id is not None:
-                from .task_system import get_task_manager
+                from .tools.task_system import get_task_manager
                 manager = get_task_manager()
                 try:
                     manager.update(task_id, owner=name)
@@ -279,7 +279,7 @@ class WorktreeManager:
             
             # 完成任务
             if complete_task and wt.get("task_id") is not None:
-                from .task_system import get_task_manager
+                from .tools.task_system import get_task_manager
                 manager = get_task_manager()
                 try:
                     manager.update(wt["task_id"], status="completed")

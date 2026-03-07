@@ -14,21 +14,21 @@ from langchain_core.messages import (
 )
 
 from .config import get_config, AgentConfig
-from .tools import get_all_tools
-from .workspace import get_workspace
-from .todo import get_todo_manager, reset_todo
-from .subagent import SubAgent, spawn_subagent
-from .logger import logger_agent
-from .skills import get_skill_loader, reload_skills
-from .context import (
+from ..tools.tools import get_all_tools
+from ..infrastructure.workspace import get_workspace
+from ..tools.todo import get_todo_manager, reset_todo
+from ..agents.subagent import SubAgent, spawn_subagent
+from ..infrastructure.logger import logger_agent
+from ..tools.skills import get_skill_loader, reload_skills
+from ..services.context import (
     get_compactor,
     ContextCompactor,
     estimate_tokens,
     reset_compactor,
 )
-from .task_system import get_task_tools, reset_tasks
-from .background import get_background_tools, drain_bg_notifications
-from .teams import get_team_tools, reset_teams
+from ..tools.task_system import get_task_tools, reset_tasks
+from ..services.background import get_background_tools, drain_bg_notifications
+from ..agents.teams import get_team_tools, reset_teams
 import os
 
 class AgentLoop:
@@ -650,13 +650,13 @@ class AgentLoop:
     
     def task_create(self, subject: str, description: str = "") -> str:
         """创建新任务"""
-        from .task_system import get_task_manager
+        from ..tools.task_system import get_task_manager
         manager = get_task_manager()
         return manager.create(subject, description)
     
     def task_get(self, task_id: int) -> str:
         """获取任务详情"""
-        from .task_system import get_task_manager
+        from ..tools.task_system import get_task_manager
         return get_task_manager().get(task_id)
     
     def task_update(
@@ -667,12 +667,12 @@ class AgentLoop:
         add_blocks: Optional[List[int]] = None,
     ) -> str:
         """更新任务状态或依赖关系"""
-        from .task_system import get_task_manager
+        from ..tools.task_system import get_task_manager
         return get_task_manager().update(task_id, status, add_blocked_by, add_blocks)
     
     def task_list(self) -> str:
         """列出所有任务"""
-        from .task_system import get_task_manager
+        from ..tools.task_system import get_task_manager
         return get_task_manager().list_all()
     
     def reset_tasks(self):
@@ -683,12 +683,12 @@ class AgentLoop:
     
     def background_run(self, command: str) -> str:
         """在后台运行命令"""
-        from .background import get_bg_manager
+        from ..services.background import get_bg_manager
         return get_bg_manager().run(command)
     
     def check_background(self, task_id: Optional[str] = None) -> str:
         """检查后台任务状态"""
-        from .background import get_bg_manager
+        from ..services.background import get_bg_manager
         return get_bg_manager().check(task_id)
     
     def reset_background(self):
@@ -699,28 +699,28 @@ class AgentLoop:
     
     def spawn_teammate(self, name: str, role: str, prompt: str) -> str:
         """创建持久化队友代理"""
-        from .teams import get_teammate_manager
+        from .agents.teams import get_teammate_manager
         return get_teammate_manager().spawn(name, role, prompt)
     
     def list_teammates(self) -> str:
         """列出所有队友"""
-        from .teams import get_teammate_manager
+        from .agents.teams import get_teammate_manager
         return get_teammate_manager().list_all()
     
     def send_message(self, to: str, content: str, msg_type: str = "message") -> str:
         """发送消息给队友"""
-        from .teams import get_bus
+        from .agents.teams import get_bus
         return get_bus().send("lead", to, content, msg_type)
     
     def read_inbox(self) -> str:
         """读取 lead 的收件箱"""
-        from .teams import get_bus
+        from .agents.teams import get_bus
         import json
         return json.dumps(get_bus().read_inbox("lead"), indent=2, ensure_ascii=False)
     
     def broadcast(self, content: str) -> str:
         """广播消息给所有队友"""
-        from .teams import get_bus, get_teammate_manager
+        from .agents.teams import get_bus, get_teammate_manager
         bus = get_bus()
         manager = get_teammate_manager()
         return bus.broadcast("lead", content, manager.member_names())

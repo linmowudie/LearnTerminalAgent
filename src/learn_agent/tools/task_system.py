@@ -13,7 +13,7 @@ from langchain_core.tools import tool
 from dataclasses import dataclass, field
 
 # 使用 ProjectConfig 管理路径
-from .project_config import get_project_config
+from ..infrastructure.project_config import get_project_config
 PROJECT = get_project_config()
 tasks_dir = PROJECT.data_dir / ".tasks"
 

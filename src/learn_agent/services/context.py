@@ -22,7 +22,7 @@ DEFAULT_THRESHOLD = 50000  # token 阈值
 KEEP_RECENT = 3  # 保留最近的工具结果数量
 
 # 使用 ProjectConfig 管理路径
-from .project_config import get_project_config
+from ..infrastructure.project_config import get_project_config
 PROJECT = get_project_config()
 TRANSCRIPT_DIR = PROJECT.data_dir / ".transcripts"
 

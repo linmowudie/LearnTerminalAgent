@@ -6,8 +6,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / 'src'))
 
-from learn_agent.workspace import WorkspaceManager
-from learn_agent.tools import bash
+from learn_agent.infrastructure.workspace import WorkspaceManager
+from learn_agent.tools.tools import bash
 
 # 初始化工作空间
 workspace = WorkspaceManager()

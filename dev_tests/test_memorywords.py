@@ -14,8 +14,8 @@ print(f"测试目录：{memory_words_dir}")
 
 sys.path.insert(0, str(Path(__file__).parent / 'src'))
 
-from learn_agent.workspace import WorkspaceManager
-from learn_agent.tools import list_directory, write_file, read_file
+from learn_agent.infrastructure.workspace import WorkspaceManager
+from learn_agent.tools.tools import list_directory, write_file, read_file
 
 print("\n1. 初始化工作空间为 MemoryWords")
 workspace = WorkspaceManager()

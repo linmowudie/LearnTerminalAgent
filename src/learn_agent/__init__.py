@@ -1,15 +1,15 @@
 # LearnTerminalAgent 核心模块
 
-from .agent import AgentLoop
-from .config import AgentConfig, get_config
-from .tools import get_all_tools
-from .todo import TodoManager, get_todo_manager, reset_todo
-from .subagent import SubAgent, spawn_subagent
-from .skills import SkillLoader, get_skill_loader
-from .context import ContextCompactor, get_compactor, estimate_tokens
-from .task_system import TaskManager, get_task_manager, reset_tasks
-from .background import BackgroundManager, get_bg_manager, reset_background
-from .teams import TeammateManager, MessageBus, get_teammate_manager, get_bus, reset_teams
+from .core.agent import AgentLoop
+from .core.config import AgentConfig, get_config
+from .tools.tools import get_all_tools
+from .tools.todo import TodoManager, get_todo_manager, reset_todo
+from .agents.subagent import SubAgent, spawn_subagent
+from .tools.skills import SkillLoader, get_skill_loader
+from .services.context import ContextCompactor, get_compactor, estimate_tokens
+from .tools.task_system import TaskManager, get_task_manager, reset_tasks
+from .services.background import BackgroundManager, get_bg_manager, reset_background
+from .agents.teams import TeammateManager, MessageBus, get_teammate_manager, get_bus, reset_teams
 
 __version__ = "2.1.0"
 __all__ = [

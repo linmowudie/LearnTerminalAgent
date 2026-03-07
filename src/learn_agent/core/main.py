@@ -10,9 +10,9 @@ import sys
 # 添加项目根目录到 Python 路径
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from learn_agent.config import get_config
-from learn_agent.agent import AgentLoop
-from learn_agent.logger import logger_workspace
+from .config import get_config
+from .agent import AgentLoop
+from ..infrastructure.logger import logger_workspace
 
 
 def print_banner():
@@ -175,7 +175,7 @@ def main():
         print(f"\n[WORKSPACE] 使用工作空间：{workspace_path}\n")
     
     # 初始化工作空间（只初始化一次）
-    from learn_agent.workspace import get_workspace
+    from learn_agent.infrastructure.workspace import get_workspace
     workspace = get_workspace()
     
     # 检查工作空间是否已经在其他地方被初始化

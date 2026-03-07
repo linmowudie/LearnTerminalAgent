@@ -36,8 +36,8 @@ print(f"  - {project_path}/README.md")
 sys.path.insert(0, str(Path(__file__).parent / 'src'))
 
 # 导入 Agent（模拟在其他目录启动）
-from learn_agent.workspace import WorkspaceManager
-from learn_agent.tools import read_file, write_file, list_directory, bash
+from learn_agent.infrastructure.workspace import WorkspaceManager
+from learn_agent.tools.tools import read_file, write_file, list_directory, bash
 
 print("\n🔧 初始化工作空间为测试项目")
 workspace = WorkspaceManager()

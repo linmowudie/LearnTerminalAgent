@@ -12,8 +12,8 @@ import logging
 # 添加项目根目录到 Python 路径
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from src.learn_agent.agent import AgentLoop
-from src.learn_agent.logger import set_log_level
+from src.learn_agent.core.agent import AgentLoop
+from src.learn_agent.infrastructure.logger import set_log_level
 
 def run_diagnostic_test():
     """运行诊断测试"""

@@ -22,7 +22,7 @@ src_dir = script_dir.parent / 'src'
 sys.path.insert(0, str(src_dir))
 
 # 现在可以导入 learn_agent
-from learn_agent.main import main
+from learn_agent.core.main import main
 
 if __name__ == "__main__":
     # 传递命令行参数

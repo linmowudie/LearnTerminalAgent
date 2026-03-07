@@ -7,8 +7,8 @@ import tempfile
 
 sys.path.insert(0, str(Path(__file__).parent / 'src'))
 
-from learn_agent.workspace import WorkspaceManager
-from learn_agent.tools import read_file, write_file, list_directory
+from learn_agent.infrastructure.workspace import WorkspaceManager
+from learn_agent.tools.tools import read_file, write_file, list_directory
 
 print("=" * 60)
 print("真实场景测试")

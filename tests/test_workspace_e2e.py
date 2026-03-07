@@ -38,8 +38,8 @@ class TestWorkspaceEndToEnd:
 import sys
 sys.path.insert(0, r'{Path(__file__).parent.parent / 'src'}')
 
-from learn_agent.workspace import WorkspaceManager
-from learn_agent.tools import read_file
+from learn_agent.infrastructure.workspace import WorkspaceManager
+from learn_agent.tools.tools import read_file
 
 # 初始化工作空间
 workspace = WorkspaceManager()

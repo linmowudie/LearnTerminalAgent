@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / 'src'))
 
-from learn_agent.logger import (
+from learn_agent.infrastructure.logger import (
     logger_agent, logger_tools, logger_workspace,
     info, debug, warning, error,
     log_context, timing,
@@ -69,7 +69,7 @@ debug("这条 DEBUG 日志应该能看到")
 # 测试 7：实际场景 - 工作空间操作
 print("\n[测试 7] 模拟工作空间操作")
 print("-" * 60)
-from learn_agent.workspace import WorkspaceManager
+from learn_agent.infrastructure.workspace import WorkspaceManager
 
 workspace = WorkspaceManager()
 workspace.initialize(str(Path.cwd()))

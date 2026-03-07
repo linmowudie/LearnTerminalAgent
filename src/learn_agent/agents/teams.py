@@ -16,8 +16,8 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 from langchain_core.tools import tool
 
-from .config import get_config, AgentConfig
-from .project_config import get_project_config
+from ..core.config import get_config, AgentConfig
+from ..infrastructure.project_config import get_project_config
 
 # 使用 ProjectConfig 管理路径
 PROJECT = get_project_config()
@@ -207,8 +207,8 @@ class TeammateManager:
             role: 角色
             prompt: 初始任务
         """
-        from .tools import get_all_tools
-        from .workspace import get_workspace
+        from ..tools.tools import get_all_tools
+        from ..infrastructure.workspace import get_workspace
         
         # 继承工作空间
         workspace = get_workspace()
@@ -397,7 +397,7 @@ class TeammateManager:
             return "Error: Dangerous command blocked"
         
         try:
-            from .workspace import get_workspace
+            from ..infrastructure.workspace import get_workspace
             workspace = get_workspace()
             
             r = subprocess.run(
@@ -416,7 +416,7 @@ class TeammateManager:
     def _run_read(self, path: str, limit: int = None) -> str:
         """读取文件"""
         try:
-            from .workspace import get_workspace
+            from ..infrastructure.workspace import get_workspace
             workspace = get_workspace()
             abs_path = workspace.resolve_path(path)
             
@@ -436,7 +436,7 @@ class TeammateManager:
     def _run_write(self, path: str, content: str) -> str:
         """写入文件"""
         try:
-            from .workspace import get_workspace
+            from ..infrastructure.workspace import get_workspace
             workspace = get_workspace()
             abs_path = workspace.resolve_path(path)
             
@@ -454,7 +454,7 @@ class TeammateManager:
     def _run_edit(self, path: str, old_text: str, new_text: str) -> str:
         """编辑文件"""
         try:
-            from .workspace import get_workspace
+            from ..infrastructure.workspace import get_workspace
             workspace = get_workspace()
             abs_path = workspace.resolve_path(path)
             

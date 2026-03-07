@@ -8,9 +8,9 @@ import os
 import subprocess
 from typing import Optional
 from langchain_core.tools import tool
-from .config import get_config
-from .workspace import get_workspace
-from .logger import logger_tools, timing
+from ..core.config import get_config
+from ..infrastructure.workspace import get_workspace
+from ..infrastructure.logger import logger_tools, timing
 
 
 @tool
@@ -261,8 +261,8 @@ def get_all_tools():
     """获取所有可用工具"""
     from .todo import get_todo_tools
     from .task_system import get_task_tools
-    from .background import get_background_tools
-    from .teams import get_team_tools
+    from ..services.background import get_background_tools
+    from ..agents.teams import get_team_tools
     from .skills import get_skill_tools
     
     return [

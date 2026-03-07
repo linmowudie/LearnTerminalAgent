@@ -8,9 +8,9 @@ from typing import Optional, List
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from .config import get_config, AgentConfig
-from .tools import get_all_tools
-from .workspace import get_workspace
+from ..core.config import get_config, AgentConfig
+from ..tools.tools import get_all_tools
+from ..infrastructure.workspace import get_workspace
 
 
 class SubAgent:

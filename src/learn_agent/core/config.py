@@ -10,7 +10,7 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Optional, List
 from dotenv import load_dotenv
-from .logger import logger_config
+from ..infrastructure.logger import logger_config
 
 
 @dataclass

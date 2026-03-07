@@ -61,7 +61,7 @@ class BackgroundManager:
             command: 命令
         """
         try:
-            from .workspace import get_workspace
+            from ..infrastructure.workspace import get_workspace
             workspace = get_workspace()
             
             r = subprocess.run(

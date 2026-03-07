@@ -11,8 +11,8 @@ print("LearnTerminalAgent 启动测试")
 print("=" * 60)
 
 try:
-    from learn_agent.workspace import WorkspaceManager
-    from learn_agent.tools import list_directory
+    from learn_agent.infrastructure.workspace import WorkspaceManager
+    from learn_agent.tools.tools import list_directory
     
     print("\n[OK] 模块导入成功")
     

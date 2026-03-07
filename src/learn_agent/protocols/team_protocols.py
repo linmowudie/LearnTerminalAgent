@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Dict, Optional
 from langchain_core.tools import tool
 
-from .teams import MessageBus, TeammateManager, get_bus, get_teammate_manager
+from ..agents.teams import MessageBus, TeammateManager, get_bus, get_teammate_manager
 
 
 # 请求追踪器

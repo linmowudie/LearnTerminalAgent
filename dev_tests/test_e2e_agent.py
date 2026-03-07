@@ -6,8 +6,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / 'src'))
 
-from learn_agent.agent import AgentLoop
-from learn_agent.config import get_config
+from learn_agent.core.agent import AgentLoop
+from learn_agent.core.config import get_config
 
 print("=== 创建 Agent (工作空间：PersionalProject) ===")
 config = get_config()

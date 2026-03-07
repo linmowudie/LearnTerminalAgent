@@ -10,8 +10,8 @@ from pathlib import Path
 from typing import Dict, List, Optional
 from langchain_core.tools import tool
 
-from .config import get_config
-from .project_config import get_project_config
+from ..core.config import get_config
+from ..infrastructure.project_config import get_project_config
 
 # 使用 ProjectConfig 管理路径
 PROJECT = get_project_config()
