@@ -16,7 +16,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 from langchain_core.tools import tool
 
-from ..core.config import get_config, AgentConfig
+from ..core.config import get_config
 from ..infrastructure.project_config import get_project_config
 
 # 使用 ProjectConfig 管理路径

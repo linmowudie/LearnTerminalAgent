@@ -37,7 +37,68 @@ graph TB
 
 ### SubAgent 类
 
-完整实现位于 [`src/learn_agent/subagent.py`](../src/learn_agent/subagent.py)
+完整实现位于 [`src/learn_agent/agents/subagent.py`](../../src/learn_agent/agents/subagent.py)
+
+#### 系统提示词系统
+
+子代理现在支持三种方式的系统提示词：
+
+1. **自定义提示词**（最高优先级）：直接传入 `system_prompt` 参数
+2. **文件加载提示词**（默认）：从 `prompts/subagent_prompt_zh.md` 加载中文提示词
+3. **简化默认提示词**（后备）：当文件不存在时使用的英文简版
+
+**提示词文件路径**:
+```python
+DEFAULT_SUBAGENT_PROMPT_PATH = Path(__file__).parent.parent.parent.parent / "prompts" / "subagent_prompt_zh.md"
+```
+
+**加载逻辑**:
+```python
+def load_subagent_prompt(
+    prompt_path: Optional[Path] = None,
+    workspace_root: str = "",
+    task_description: str = "",
+) -> str:
+    """
+    加载子代理提示词模板
+    
+    Args:
+        prompt_path: 提示词文件路径，None 则使用默认路径
+        workspace_root: 工作空间根目录
+        task_description: 任务描述
+        
+    Returns:
+        渲染后的提示词字符串
+    """
+    path = prompt_path if prompt_path else DEFAULT_SUBAGENT_PROMPT_PATH
+    
+    if not path.exists():
+        # 如果提示词文件不存在，返回简化的默认提示词
+        return (
+            f"你是由主代理委派的专属子代理，工作目录：{workspace_root}\n"
+            f"高效完成指定任务，并返回清晰的摘要。\n"
+            f"当前任务：{task_description}"
+        )
+    
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            template = f.read()
+        
+        # 替换占位符
+        rendered = template.replace("{workspace_root}", workspace_root)
+        rendered = rendered.replace("{task_description}", task_description)
+        
+        return rendered
+    except Exception as e:
+        # 加载失败时返回简化版本
+        return (
+            f"你是由主代理委派的专属子代理，工作目录：{workspace_root}\n"
+            f"高效完成指定任务，并返回清晰的摘要。\n"
+            f"当前任务：{task_description}"
+        )
+```
+
+#### SubAgent 初始化
 
 ```python
 class SubAgent:
@@ -52,7 +113,19 @@ class SubAgent:
         self,
         parent_config: Optional[AgentConfig] = None,
         system_prompt: Optional[str] = None,
+        prompt_path: Optional[Path] = None,  # 新增参数
     ):
+        """
+        初始化子代理
+        
+        Args:
+            parent_config: 父代理配置
+            system_prompt: 系统提示词（优先级高于文件加载）
+            prompt_path: 提示词文件路径（可选，默认使用 prompts/subagent_prompt_zh.md）
+        """
+        # 继承主代理的工作空间（关键！）
+        self.workspace = get_workspace()
+        
         # 使用父代理的配置或默认配置
         self.config = parent_config or get_config()
         
@@ -68,15 +141,15 @@ class SubAgent:
         self.tools = get_all_tools()
         self.llm_with_tools = self.llm.bind_tools(self.tools)
         
-        # 系统提示
+        # 系统提示 - 优先级：自定义 > 文件加载 > 默认
         if system_prompt:
             self.system_prompt = system_prompt
         else:
-            self.system_prompt = (
-                f"You are a coding subagent at {os.getcwd()}. "
-                f"Complete the given task efficiently. "
-                f"Use the provided tools to accomplish your goals. "
-                f"When done, provide a concise summary of what you accomplished."
+            # 从文件加载提示词
+            self.system_prompt = load_subagent_prompt(
+                prompt_path=prompt_path,
+                workspace_root=self.workspace.root,
+                task_description="等待分配任务..."
             )
         
         # 独立的消息历史（与父代理隔离）
@@ -193,6 +266,7 @@ def spawn_subagent(
     task: str,
     config: Optional[AgentConfig] = None,
     system_prompt: Optional[str] = None,
+    prompt_path: Optional[Path] = None,  # 新增参数
     verbose: bool = True,
 ) -> str:
     """
@@ -201,13 +275,18 @@ def spawn_subagent(
     Args:
         task: 任务描述
         config: 配置（可选）
-        system_prompt: 系统提示（可选）
+        system_prompt: 系统提示（可选，优先级高于文件加载）
+        prompt_path: 提示词文件路径（可选，默认使用 prompts/subagent_prompt_zh.md）
         verbose: 是否详细输出
         
     Returns:
         子代理的任务摘要
     """
-    agent = SubAgent(parent_config=config, system_prompt=system_prompt)
+    agent = SubAgent(
+        parent_config=config,
+        system_prompt=system_prompt,
+        prompt_path=prompt_path,
+    )
     return agent.run(task, verbose=verbose)
 ```
 
@@ -223,6 +302,7 @@ class AgentLoop:
         self,
         task: str,
         system_prompt: Optional[str] = None,
+        prompt_path: Optional[Path] = None,  # 新增参数
         verbose: bool = True,
     ) -> str:
         """
@@ -230,7 +310,8 @@ class AgentLoop:
         
         Args:
             task: 任务描述
-            system_prompt: 子代理系统提示（可选）
+            system_prompt: 子代理系统提示（可选，优先级高于文件加载）
+            prompt_path: 提示词文件路径（可选，默认使用 prompts/subagent_prompt_zh.md）
             verbose: 是否详细输出
             
         Returns:
@@ -240,6 +321,7 @@ class AgentLoop:
             task=task,
             config=self.config,
             system_prompt=system_prompt,
+            prompt_path=prompt_path,
             verbose=verbose,
         )
 ```
@@ -317,6 +399,56 @@ agent.run("完成整个项目重构")
 子代理 1: "负责架构设计"
   ↓ (可以进一步委派)
 孙代理："分析现有架构"
+```
+
+### 使用默认中文提示词（推荐）
+
+从 v2.0 开始，子代理默认使用中文提示词文件 `prompts/subagent_prompt_zh.md`：
+
+```python
+# 直接使用默认中文提示词
+summary = agent.spawn_subagent(task="探索项目结构")
+
+# 子代理会自动遵循以下准则：
+# - 任务聚焦：专注于分配的具体任务
+# - 效率优先：直接调用工具收集信息
+# - 边界意识：所有操作在工作空间内
+# - 结构化摘要：返回包含完成任务、关键发现、注意事项、修改文件的摘要
+```
+
+### 使用自定义提示词文件
+
+```python
+from pathlib import Path
+
+# 使用专门的数据库优化提示词
+summary = agent.spawn_subagent(
+    task="优化数据库查询性能",
+    prompt_path=Path("prompts/db_expert_prompt.md")
+)
+
+# 使用代码审查专用提示词
+summary = agent.spawn_subagent(
+    task="审查 src/目录的代码质量",
+    prompt_path=Path("prompts/code_reviewer_prompt.md")
+)
+```
+
+### 优先级规则
+
+```python
+# 1. 自定义 system_prompt（最高优先级）
+agent.spawn_subagent(
+    task="特殊任务",
+    system_prompt="完全自定义的提示词..."  # 会覆盖文件加载
+)
+
+# 2. 文件加载提示词（默认）
+agent.spawn_subagent(task="普通任务")  
+# 自动从 prompts/subagent_prompt_zh.md 加载
+
+# 3. 简化默认提示词（后备）
+# 当提示词文件不存在时自动使用
 ```
 
 ## 🔍 关键特性
@@ -408,6 +540,12 @@ agent.spawn_subagent(
    ```
    **解决**: 提供更具体的任务描述和系统提示
 
+4. **提示词文件加载失败**
+   ```
+   Warning: Failed to load prompt file, using default
+   ```
+   **解决**: 检查 `prompts/subagent_prompt_zh.md` 文件是否存在，或使用自定义 `system_prompt`
+
 ## 📊 性能考虑
 
 ### 优势
@@ -427,9 +565,13 @@ agent.spawn_subagent(
 
 1. **明确任务边界**: 子任务应该是独立、明确的
 2. **提供充分信息**: 在任务描述中包含必要的上下文
-3. **合理使用系统提示**: 为子代理定制专业角色
+3. **合理使用系统提示**: 
+   - 一般任务使用默认中文提示词即可
+   - 特殊任务使用自定义 `system_prompt` 或 `prompt_path`
 4. **启用 verbose**: 开发阶段开启详细日志
 5. **检查结果**: 验证子代理的摘要是否准确
+6. **避免过度委派**: 简单任务直接由主代理完成
+7. **注意迭代次数**: 复杂任务可能需要更多迭代，可适当调整配置
 
 ## 🔗 与相关模块对比
 

@@ -120,23 +120,44 @@ content = agent.load_skill("code-review")
 
 ## 🏗️ 架构设计
 
-### 核心模块
+### 七层架构结构
+
+项目采用分层架构设计，从扁平结构升级为模块化七层架构：
 
 ```
 src/learn_agent/
-├── agent.py           # Agent 循环核心
-├── tools.py           # 基础工具定义
-├── todo.py            # TodoWrite 任务管理
-├── task_system.py     # 持久化任务系统
-├── subagent.py        # 子代理实现
-├── skills.py          # 技能加载器
-├── context.py         # 上下文压缩
-├── background.py      # 后台任务
-├── teams.py           # 团队协作
-├── autonomous_agents.py  # 自主代理
-├── worktree_isolation.py # Worktree 隔离
-├── config.py          # 配置管理
-└── project_config.py  # 项目配置
+├── core/                    # 核心层 - Agent 大脑
+│   ├── agent.py            # AgentLoop 类，完整的 Agent 循环实现
+│   ├── config.py           # AgentConfig 数据类，配置管理
+│   └── main.py             # 交互式命令行入口
+│
+├── infrastructure/          # 基础设施层 - 基础支撑
+│   ├── logger.py           # 多 logger 日志系统
+│   ├── workspace.py        # 工作空间沙箱，路径验证
+│   └── project_config.py   # 项目级别配置管理
+│
+├── tools/                   # 工具层 - 能力提供
+│   ├── tools.py            # 基础工具（bash, read_file, write_file 等）
+│   ├── todo.py             # TodoWrite 任务管理工具 (s03)
+│   ├── task_system.py      # 高级任务系统工具 (s07)
+│   └── skills.py           # 技能加载器 (s05)
+│
+├── agents/                  # 代理扩展层 - 多代理协作
+│   ├── subagent.py         # 子代理生成和管理 (s04)
+│   ├── teams.py            # 代理团队管理，消息总线 (s09)
+│   └── autonomous_agents.py # 自主代理执行 (s11)
+│
+├── services/                # 服务层 - 高级功能
+│   ├── context.py          # 上下文压缩，token 管理 (s06)
+│   └── background.py       # 后台进程管理 (s08)
+│
+├── protocols/               # 协议层 - 通信规范
+│   ├── team_protocols.py   # 团队通信协议实现 (s10)
+│   └── worktree_isolation.py # Git Worktree 隔离机制 (s12)
+│
+└── scripts/                 # 脚本层 - 辅助工具
+    ├── run.py              # 快速启动脚本
+    └── test_config.py      # 配置测试脚本
 ```
 
 ### 数据目录
@@ -149,6 +170,13 @@ data/
 ├── .transcripts/  # 对话记录
 └── .worktrees/    # Worktree 索引
 ```
+
+### 架构优势
+
+- **🎯 职责分离**：每层专注于特定功能领域
+- **🔧 高度模块化**：易于维护和扩展
+- **📦 可复用性**：各层可独立使用和测试
+- **🚀 灵活部署**：支持按需加载和组合
 
 ## ⚙️ 配置选项
 

@@ -377,6 +377,87 @@ agent.reload_skills()
 
 ---
 
+### SubAgent 工具 (s04)
+
+#### spawn_subagent
+
+创建子代理执行独立任务。
+
+**签名**:
+```python
+spawn_subagent(
+    task: str,
+    config: Optional[AgentConfig] = None,
+    system_prompt: Optional[str] = None,
+    prompt_path: Optional[Path] = None,
+    verbose: bool = True,
+) -> str
+```
+
+**参数说明**:
+- `task`: 任务描述，清晰说明目标和预期输出
+- `config`: 子代理配置（可选），默认继承父代理配置
+- `system_prompt`: 自定义系统提示词（可选），优先级高于文件加载
+- `prompt_path`: 提示词文件路径（可选），默认使用 `prompts/subagent_prompt_zh.md`
+- `verbose`: 是否打印详细日志
+
+**示例**:
+
+```python
+# 基础用法 - 探索性任务
+summary = agent.spawn_subagent(task="探索项目结构，识别核心模块和依赖关系")
+print(summary)
+# 输出：
+# ✅ 完成任务：项目结构探索
+# 📊 关键发现：
+#   - 项目包含 5 个主要目录
+#   - 核心代码在 src/learn_agent/
+#   - 使用 LangChain 框架
+# 📁 修改文件：无
+```
+
+```python
+# 专业化任务 - 代码审查
+summary = agent.spawn_subagent(
+    task="审查 src/learn_agent 目录的代码质量",
+    system_prompt="你是资深代码审查员。关注：代码风格、错误处理、性能优化、安全问题"
+)
+```
+
+```python
+# 测试编写
+summary = agent.spawn_subagent(task="为 agent.py 编写单元测试，覆盖所有公共方法")
+```
+
+```python
+# 使用自定义提示词文件
+from pathlib import Path
+summary = agent.spawn_subagent(
+    task="优化数据库查询性能",
+    prompt_path=Path("prompts/db_expert_prompt.md")
+)
+```
+
+**使用场景**:
+- **探索性工作**: 需要大量文件读取和理解的独立任务
+- **专业化任务**: 需要特定领域知识（如代码审查、测试编写、文档优化）
+- **复杂子任务**: 可能消耗大量迭代次数的独立功能
+- **并行工作**: 可以与主任务同时进行的工作
+
+**注意事项**:
+- 子代理有独立的上下文和迭代计数器（最大 50 次）
+- 子代理可以访问所有工具和相同的工作空间
+- 只有最终摘要返回给主代理，详细过程不保留
+- 避免委派过于模糊或开放式的任务
+
+**最佳实践**:
+1. **明确任务边界**: 在 task 参数中清晰描述目标和预期输出
+2. **提供上下文**: 包含必要的背景信息和相关文件路径
+3. **定制系统提示**: 为特殊任务提供专门的 system_prompt 指导子代理行为
+4. **验证结果**: 子代理返回后，检查摘要是否符合预期
+
+---
+
 ### Background Tasks 工具 (s08)
 
 #### background_run

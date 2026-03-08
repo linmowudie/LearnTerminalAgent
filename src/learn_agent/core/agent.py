@@ -19,19 +19,16 @@ from .config import get_config, AgentConfig
 from ..tools.tools import get_all_tools
 from ..infrastructure.workspace import get_workspace
 from ..tools.todo import get_todo_manager, reset_todo
-from ..agents.subagent import SubAgent, spawn_subagent
+from ..agents.subagent import spawn_subagent
 from ..infrastructure.logger import logger_agent
 from ..tools.skills import get_skill_loader, reload_skills
 from ..services.context import (
     get_compactor,
-    ContextCompactor,
     estimate_tokens,
-    reset_compactor,
 )
-from ..tools.task_system import get_task_tools, reset_tasks
-from ..services.background import get_background_tools, drain_bg_notifications
-from ..agents.teams import get_team_tools, reset_teams
-import os
+from ..tools.task_system import reset_tasks
+from ..services.background import drain_bg_notifications
+from ..agents.teams import reset_teams
 
 class AgentLoop:
     """
@@ -672,6 +669,7 @@ class AgentLoop:
         self,
         task: str,
         system_prompt: Optional[str] = None,
+        prompt_path: Optional[Path] = None,
         verbose: bool = True,
     ) -> str:
         """
@@ -679,7 +677,8 @@ class AgentLoop:
         
         Args:
             task: 任务描述
-            system_prompt: 子代理系统提示（可选）
+            system_prompt: 子代理系统提示（可选，优先级高于文件加载）
+            prompt_path: 提示词文件路径（可选，默认使用 prompts/subagent_prompt_zh.md）
             verbose: 是否详细输出
             
         Returns:
@@ -689,6 +688,7 @@ class AgentLoop:
             task=task,
             config=self.config,
             system_prompt=system_prompt,
+            prompt_path=prompt_path,
             verbose=verbose,
         )
     

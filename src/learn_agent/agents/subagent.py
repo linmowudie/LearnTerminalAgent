@@ -4,6 +4,7 @@ LearnTerminalAgent SubAgent 模块 - s04
 """
 
 import os
+from pathlib import Path
 from typing import Optional, List
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -11,6 +12,54 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from ..core.config import get_config, AgentConfig
 from ..tools.tools import get_all_tools
 from ..infrastructure.workspace import get_workspace
+
+
+# 子代理提示词模板路径
+DEFAULT_SUBAGENT_PROMPT_PATH = Path(__file__).parent.parent.parent.parent / "prompts" / "subagent_prompt_zh.md"
+
+
+def load_subagent_prompt(
+    prompt_path: Optional[Path] = None,
+    workspace_root: str = "",
+    task_description: str = "",
+) -> str:
+    """
+    加载子代理提示词模板
+    
+    Args:
+        prompt_path: 提示词文件路径，None 则使用默认路径
+        workspace_root: 工作空间根目录
+        task_description: 任务描述
+        
+    Returns:
+        渲染后的提示词字符串
+    """
+    path = prompt_path if prompt_path else DEFAULT_SUBAGENT_PROMPT_PATH
+    
+    if not path.exists():
+        # 如果提示词文件不存在，返回简化的默认提示词
+        return (
+            f"你是由主代理委派的专属子代理，工作目录：{workspace_root}\n"
+            f"高效完成指定任务，并返回清晰的摘要。\n"
+            f"当前任务：{task_description}"
+        )
+    
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            template = f.read()
+        
+        # 替换占位符
+        rendered = template.replace("{workspace_root}", workspace_root)
+        rendered = rendered.replace("{task_description}", task_description)
+        
+        return rendered
+    except Exception as e:
+        # 加载失败时返回简化版本
+        return (
+            f"你是由主代理委派的专属子代理，工作目录：{workspace_root}\n"
+            f"高效完成指定任务，并返回清晰的摘要。\n"
+            f"当前任务：{task_description}"
+        )
 
 
 class SubAgent:
@@ -25,13 +74,15 @@ class SubAgent:
         self,
         parent_config: Optional[AgentConfig] = None,
         system_prompt: Optional[str] = None,
+        prompt_path: Optional[Path] = None,
     ):
         """
         初始化子代理
         
         Args:
             parent_config: 父代理配置
-            system_prompt: 系统提示词
+            system_prompt: 系统提示词（优先级高于文件加载）
+            prompt_path: 提示词文件路径（可选，默认使用 prompts/subagent_prompt_zh.md）
         """
         # 继承主代理的工作空间（关键！）
         self.workspace = get_workspace()
@@ -51,16 +102,15 @@ class SubAgent:
         self.tools = get_all_tools()
         self.llm_with_tools = self.llm.bind_tools(self.tools)
         
-        # 系统提示 - 包含工作空间信息
+        # 系统提示 - 优先级：自定义 > 文件加载 > 默认
         if system_prompt:
             self.system_prompt = system_prompt
         else:
-            self.system_prompt = (
-                f"You are a coding subagent working on a task.\n"
-                f"Your workspace is: {self.workspace.root}\n"
-                f"All file operations must be within this workspace.\n"
-                f"Complete the given task efficiently. "
-                f"When done, provide a concise summary of what you accomplished."
+            # 从文件加载提示词
+            self.system_prompt = load_subagent_prompt(
+                prompt_path=prompt_path,
+                workspace_root=self.workspace.root,
+                task_description="等待分配任务..."
             )
         
         # 独立的消息历史（与父代理隔离）
@@ -188,6 +238,7 @@ def spawn_subagent(
     task: str,
     config: Optional[AgentConfig] = None,
     system_prompt: Optional[str] = None,
+    prompt_path: Optional[Path] = None,
     verbose: bool = True,
 ) -> str:
     """
@@ -196,11 +247,16 @@ def spawn_subagent(
     Args:
         task: 任务描述
         config: 配置（可选）
-        system_prompt: 系统提示（可选）
+        system_prompt: 系统提示（可选，优先级高于文件加载）
+        prompt_path: 提示词文件路径（可选，默认使用 prompts/subagent_prompt_zh.md）
         verbose: 是否详细输出
         
     Returns:
         子代理的任务摘要
     """
-    agent = SubAgent(parent_config=config, system_prompt=system_prompt)
+    agent = SubAgent(
+        parent_config=config,
+        system_prompt=system_prompt,
+        prompt_path=prompt_path,
+    )
     return agent.run(task, verbose=verbose)
