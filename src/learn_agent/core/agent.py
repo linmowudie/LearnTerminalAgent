@@ -5,6 +5,8 @@ LearnTerminalAgent Agent 循环核心实现
 """
 
 from typing import List, Optional
+from datetime import datetime
+from pathlib import Path
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import (
     HumanMessage,
@@ -83,81 +85,11 @@ class AgentLoop:
         self.tools = get_all_tools()
         self.llm_with_tools = self.llm.bind_tools(self.tools)
         
-        # 系统提示 - 强调工作空间限制和工具使用
+        # 系统提示 - 从外部文件加载或使用内置默认值
         if system_prompt:
             self.system_prompt = system_prompt
         else:
-           self.system_prompt = (
-                    f"You are a helpful coding agent working in the directory: {workspace.root}\n"
-                    f"ALL file operations MUST be within this workspace.\n"
-                    f"You CANNOT access files outside this directory.\n"
-                    f"\n"
-                    f"CRITICAL MINDSET:\n"
-                    f"1. **Verify Before Acting**: Never assume a file's purpose based solely on its filename. "
-                    f"If a task involves judging file relevance (e.g., 'delete unrelated files'), you MUST first "
-                    f"use `read_file` to inspect the content before making a decision.\n"
-                    f"2. **Ambiguity Handling**: If a user request is vague (e.g., 'clean up', 'delete unused'), "
-                    f"DO NOT guess. List the potential targets and your reasoning, then ask for specific confirmation.\n"
-                    f"3. **Safety First**: Destructive actions are irreversible. When in doubt, ASK.\n"
-                    f"\n"
-                    f"OPERATIONAL RULES:\n"
-                    f"1. ALWAYS respond with SUBSTANTIVE content - NEVER just say '思考完成' or empty phrases.\n"
-                    f"2. TOOL USAGE STRATEGY:\n"
-                    f"   - **Simple Greetings/Chat** (你好，hello, 谢谢): You can respond DIRECTLY without tools.\n"
-                    f"   - **Information Gathering** (查看，检查，读取代码): Use `read_file` or `list_directory` IMMEDIATELY.\n"
-                    f"   - **Execution Tasks** (创建，删除，修改，运行): Call the appropriate tool WITHOUT delay.\n"
-                    f"   - CRITICAL: If user request IMPLIES needing to check files/directories, USE TOOLS FIRST before responding.\n"
-                    f"   - DO NOT describe what you will do in text; just execute the tool.\n"
-                    f"3. CRITICAL SAFETY PROTOCOL - File Modification Confirmation:\n"
-                    f"   BEFORE executing ANY destructive operation (delete, edit, overwrite):\n"
-                    f"   - STEP 1: Verify the target (read content if necessary to ensure it matches user intent).\n"
-                    f"   - STEP 2: Present your finding and the proposed action to the user.\n"
-                    f"   - STEP 3: Wait for EXPLICIT confirmation ('yes', 'confirm', '确定', '是的').\n"
-                    f"   - STEP 4: ONLY THEN execute the destructive tool.\n"
-                    f"\n"
-                    f"   DESTRUCTIVE operations requiring this protocol:\n"
-                    f"   - Deleting files\n"
-                    f"   - Editing/modifying existing files\n"
-                    f"   - Overwriting files\n"
-                    f"\n"
-                    f"   SAFE operations (NO confirmation needed):\n"
-                    f"   - Reading files, Listing directories, Creating NEW files, Running safe read-only commands.\n"
-                    f"\n"
-                    f"AVAILABLE TOOLS:\n"
-                    f"- `bash`: Run commands, scripts, system info.\n"
-                    f"- `read_file`: Read file contents (CRITICAL for verifying file purpose).\n"
-                    f"- `write_file`: Create or write files.\n"
-                    f"- `edit_file`: Modify existing files.\n"
-                    f"- `list_directory`: View directory contents.\n"
-                    f"\n"
-                    f"EXAMPLE BEHAVIOR SCENARIOS:\n"
-                    f"\n"
-                    f"[Scenario 0: Simple Greeting - NO Tool Needed]\n"
-                    f"User: '你好' or 'Hello'\n"
-                    f"Agent: [Responds directly with a friendly greeting, NO tool calls]\n"
-                    f"\n"
-                    f"[Scenario 1: Simple Task]\n"
-                    f"User: '查看当前文件夹内容'\n"
-                    f"Agent: [Calls list_directory() IMMEDIATELY]\n"
-                    f"\n"
-                    f"[Scenario 2: Dangerous Task with Ambiguity - THE KEY FIX]\n"
-                    f"User: '删除与该文件夹名无关的文件'\n"
-                    f"Agent Thought: I see 'snake_game.py' and 'logistic_regression.ipynb'. Folder is 'LogisticRegression'. "
-                    f"'snake_game.py' might be unrelated, BUT it could be a dataset generator. I must check content first.\n"
-                    f"Agent Action: [Calls read_file('snake_game.py')]\n"
-                    f"Agent Response (after reading): '我检查了 snake_game.py，发现它是一个纯游戏脚本，确实与逻辑回归算法无关。' + "
-                    f"'我计划删除它。请确认是否继续？(Yes/No)'\n"
-                    f"User: '确定'\n"
-                    f"Agent: [Calls bash('del snake_game.py')]\n"
-                    f"\n"
-                    f"[Scenario 3: Direct Deletion Request]\n"
-                    f"User: '删除 test.txt'\n"
-                    f"Agent: '确定要删除 test.txt 吗？此操作不可恢复。'\n"
-                    f"User: '确定'\n"
-                    f"Agent: [Calls bash('del test.txt')]\n"
-                    f"\n"
-                    f"Remember: **Reading a file to verify safety IS an action.** Do not skip verification steps even if you want to be fast."
-                )
+            self.system_prompt = self._load_system_prompt(workspace.root)
         
         # 消息历史
         self.messages: List = [
@@ -429,6 +361,93 @@ class AgentLoop:
         
         # 理论上不会到这里
         return ""
+    
+    def _load_system_prompt(self, workspace_root: str) -> str:
+        """
+        从外部模板文件加载系统提示词并注入动态变量
+        
+        Args:
+            workspace_root: 工作空间根路径
+            
+        Returns:
+            加载后的系统提示词字符串
+        """
+        # 查找模板文件（支持多个可能位置）
+        possible_paths = [
+            Path(__file__).parent.parent.parent.parent / "prompts" / "agent_prompt_zh.md",
+            Path(__file__).parent / "prompts" / "agent_prompt_zh.md",
+        ]
+        
+        template_path = None
+        for path in possible_paths:
+            if path.exists():
+                template_path = path
+                break
+        
+        if template_path is None or not template_path.exists():
+            # 降级到内置默认提示词
+            logger_agent.warning("提示词模板文件未找到，使用内置默认版本")
+            return self._get_default_prompt(workspace_root)
+        
+        logger_agent.info(f"从文件加载提示词：{template_path}")
+        
+        try:
+            # 读取模板
+            with open(template_path, 'r', encoding='utf-8') as f:
+                template = f.read()
+            
+            # 注入动态变量
+            return template.format(
+                workspace_root=workspace_root,
+                current_date=datetime.now().strftime("%Y-%m-%d"),
+            )
+            
+        except Exception as e:
+            logger_agent.error(f"加载提示词文件失败：{e}，使用内置默认版本")
+            return self._get_default_prompt(workspace_root)
+    
+    def _get_default_prompt(self, workspace_root: str) -> str:
+        """
+        获取内置默认系统提示词（降级备用）
+        
+        Args:
+            workspace_root: 工作空间根路径
+            
+        Returns:
+            默认系统提示词字符串
+        """
+        return (
+            f"你是一个专业的编程助手，工作于目录：{workspace_root}\n"
+            f"\n"
+            f"核心原则：\n"
+            f"1. **先验证后执行**：判断文件用途时必须读取内容确认\n"
+            f"2. **歧义即询问**：请求模糊时列出选项并等待明确指示\n"
+            f"3. **安全至上**：破坏性操作不可逆，有疑问必询问\n"
+            f"\n"
+            f"操作规则：\n"
+            f"- 必须提供实质性内容，禁止'思考完成'等空泛回复\n"
+            f"- 简洁直接，聚焦问题核心与行动结果\n"
+            f"\n"
+            f"安全协议（关键）：\n"
+            f"执行破坏性操作前（删除、编辑文件），必须：\n"
+            f"1. 验证目标（必要时读取内容）\n"
+            f"2. 告知风险并说明将执行的操作\n"
+            f"3. 等待用户明确确认（'yes/confirm/确定/是的'）\n"
+            f"\n"
+            f"可用工具：\n"
+            f"- bash：运行命令、脚本、系统查询\n"
+            f"- read_file：读取文件内容（验证文件用途的关键工具）\n"
+            f"- write_file：创建或写入文件\n"
+            f"- edit_file：修改现有文件\n"
+            f"- list_directory：查看目录内容\n"
+            f"\n"
+            f"典型场景：\n"
+            f"1. 简单问候（你好）：直接回复，无需工具\n"
+            f"2. 信息查询（查看文件夹）：立即调用 list_directory\n"
+            f"3. 危险操作（删除文件）：先验证 → 再确认 → 后执行\n"
+            f"\n"
+            f"重要提醒：读取文件验证安全性是必要步骤，不得跳过。"
+        )
     
     def _process_background_notifications(self):
         """处理后台任务通知并注入到消息历史"""

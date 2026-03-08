@@ -122,44 +122,46 @@ def _format_response_card(content: str) -> str:
     BOLD = "\033[1m"
     RESET = "\033[0m"
     
+    # 固定边距空格数
+    LEFT_MARGIN = "  "  # 左侧保留 2 个空格
+    RIGHT_MARGIN = "  "   # 右侧同样保留两个空格
+    
     # 分割内容为行
     lines = content.split('\n')
     
-    # 构建卡片边框
-    width = max(len(line) for line in lines) + 4
-    border = "╔" + "═" * (width - 2) + "╗"
-    bottom_border = "╚" + "═" * (width - 2) + "╝"
+    # 构建卡片边框（基于实际内容宽度 + 固定边距）
+    max_content_width = max(len(line) for line in lines)
+    # 卡片总宽度 = 左边界 (║) + 空格 (1) + 内容 + 空格 (1) + 右边界 (║)
+    inner_width = max_content_width + 2  # 内容左右各留 1 个空格
+    border = LEFT_MARGIN + f"{CYAN}╔" + "═" * inner_width + f"╗{RIGHT_MARGIN}{RESET}"
+    bottom_border = LEFT_MARGIN + f"{CYAN}╚" + "═" * inner_width + f"╝{RIGHT_MARGIN}{RESET}"
     
     # 构建卡片内容
     formatted_lines = []
-    formatted_lines.append(f"{CYAN}{border}{RESET}")
+    formatted_lines.append(border)
     
     for line in lines:
         # 检测内容类型并应用样式
         if line.strip().startswith(('```', 'import ', 'def ', 'class ', 'return ')):
             # 代码块 - 使用黄色
-            formatted_lines.append(f"{CYAN}║ {YELLOW}{line.ljust(width - 4)}{CYAN} ║{RESET}")
+            formatted_lines.append(LEFT_MARGIN + f"{CYAN}║ {YELLOW}{line.ljust(max_content_width)}{CYAN} ║{RIGHT_MARGIN}{RESET}")
         elif line.strip().startswith(('✅', '✓', '✔')):
             # 成功消息 - 使用绿色
-            formatted_lines.append(f"{CYAN}║ {GREEN}{BOLD}{line.ljust(width - 4)}{CYAN} ║{RESET}")
+            formatted_lines.append(LEFT_MARGIN + f"{CYAN}║ {GREEN}{BOLD}{line.ljust(max_content_width)}{CYAN} ║{RIGHT_MARGIN}{RESET}")
         elif line.strip().startswith(('⚠️', '❗', 'Error')):
             # 警告/错误 - 使用红色
-            formatted_lines.append(f"{CYAN}║ \033[31m{line.ljust(width - 4)}{CYAN} ║{RESET}")
+            formatted_lines.append(LEFT_MARGIN + f"{CYAN}║ \033[31m{line.ljust(max_content_width)}{CYAN} ║{RIGHT_MARGIN}{RESET}")
         else:
             # 普通文本
-            formatted_lines.append(f"{CYAN}║ {GREEN}{line.ljust(width - 4)}{CYAN} ║{RESET}")
+            formatted_lines.append(LEFT_MARGIN + f"{CYAN}║ {GREEN}{line.ljust(max_content_width)}{CYAN} ║{RIGHT_MARGIN}{RESET}")
     
-    formatted_lines.append(f"{CYAN}{bottom_border}{RESET}")
+    formatted_lines.append(bottom_border)
     
     return '\n'.join(formatted_lines)
 
 
 def main():
     """主程序入口"""
-    
-    import sys
-    import os
-    from pathlib import Path
     
     # Windows 下设置 UTF-8 编码
     if sys.platform == 'win32':
