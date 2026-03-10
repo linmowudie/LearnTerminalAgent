@@ -178,6 +178,32 @@
 
 ### 配置与环境
 
+#### [环境配置指南](guides/environment-setup.md)
+**用途**: Python 虚拟环境管理和项目配置  
+**用法**:
+```bash
+# 创建虚拟环境
+python -m venv .venv
+
+# 激活虚拟环境
+.\.venv\Scripts\Activate.ps1  # Windows
+source.venv/bin/activate      # Linux/Mac
+
+# 安装依赖
+uv pip install -e .
+
+# 使用启动脚本
+.\agent.ps1
+```
+
+**核心特性**:
+- ✅ 项目隔离，避免依赖冲突
+- ✅ uv 工具集成（快 10-100 倍）
+- ✅ 自动激活和优雅降级
+- ✅ 跨平台兼容
+
+---
+
 #### [配置指南](guides/config-guide.md)
 **用途**: 管理所有配置项  
 **用法**:
