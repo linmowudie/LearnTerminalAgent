@@ -4,6 +4,8 @@ langchain-core>=0.1.0
 langchain-openai>=0.0.5
 python-dotenv>=1.0.0
 anthropic>=0.8.0
+rich>=13.0.0
+typer>=0.9.0
 
 # 开发依赖（可选）
 # pytest>=7.0.0

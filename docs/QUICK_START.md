@@ -10,6 +10,49 @@
 
 ## 🚀 安装步骤
 
+### 📦 环境配置（首次使用）
+
+#### 方法 1：使用虚拟环境（推荐）
+
+**1. 创建虚拟环境**
+```bash
+cd f:\ProjectCode\LearnTerminalAgent
+python -m venv .venv
+```
+
+**2. 激活虚拟环境**
+```powershell
+# Windows PowerShell
+.\.venv\Scripts\Activate.ps1
+
+# Linux/Mac
+source.venv/bin/activate
+```
+
+**3. 安装项目依赖**
+```bash
+# 使用 uv（推荐，更快）
+uv pip install -e .
+
+# 或使用 pip
+pip install-e .
+```
+
+**4. 验证安装**
+```bash
+python -m learn_agent.main
+```
+
+#### 方法 2：全局安装（不推荐）
+
+```bash
+pip install -e .
+```
+
+**注意**: 此方法会污染全局 Python 环境，建议使用虚拟环境。
+
+---
+
 ### 1. 克隆项目
 
 ```bash
@@ -17,6 +60,8 @@ cd f:\ProjectCode\learn-claude-code\learn-agent
 ```
 
 ### 2. 安装依赖
+
+**如果已按上述配置虚拟环境，此步骤可跳过**
 
 ```bash
 pip install -e .
@@ -53,11 +98,11 @@ export QWEN_API_KEY="sk-your-api-key-here"
 - `ANTHROPIC_API_KEY` - Anthropic Claude
 - `OPENAI_API_KEY` - OpenAI GPT
 
-### 4.模型配置
+### 5. 模型配置
 
 如果你想使用其它平台的API或者其它模型，你必须登录相关平台获取API_KEY,填入配置文件并修改相关的模型名和基础路由，具体详情可以询问大模型，相关技术应用已经很成熟了
 
-### 5. 验证安装
+### 6. 验证安装
 
 ```bash
 python -m learn_agent.main
