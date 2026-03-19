@@ -15,6 +15,8 @@ import time
 from pathlib import Path
 from typing import Dict, List, Optional
 from langchain_core.tools import tool
+from ..infrastructure.tool_logger import log_tool_call
+from ..core.config import get_config
 
 # 使用 ProjectConfig 管理路径
 from ..infrastructure.project_config import get_project_config
@@ -232,9 +234,11 @@ class WorktreeManager:
     
     def run(self, name: str, command: str) -> str:
         """在 worktree 中运行命令"""
-        dangerous = ["rm -rf /", "sudo", "shutdown", "reboot", "> /dev/"]
-        if any(d in command for d in dangerous):
-            return "Error: Dangerous command blocked"
+        # 使用配置文件的危险命令检查（而不是硬编码）
+        config = get_config()
+        for pattern in config.dangerous_patterns:
+            if pattern in command:
+                return f"Error: Dangerous command '{pattern}' blocked"
         
         wt = self._find(name)
         if not wt:
@@ -362,6 +366,7 @@ def get_worktree_manager() -> WorktreeManager:
 
 
 @tool
+@log_tool_call
 def worktree_create(name: str, task_id: int = None, base_ref: str = "HEAD") -> str:
     """创建 worktree"""
     manager = get_worktree_manager()
@@ -369,6 +374,7 @@ def worktree_create(name: str, task_id: int = None, base_ref: str = "HEAD") -> s
 
 
 @tool
+@log_tool_call
 def worktree_list() -> str:
     """列出 worktree"""
     manager = get_worktree_manager()
@@ -376,6 +382,7 @@ def worktree_list() -> str:
 
 
 @tool
+@log_tool_call
 def worktree_status(name: str) -> str:
     """查看 worktree 状态"""
     manager = get_worktree_manager()
@@ -383,6 +390,7 @@ def worktree_status(name: str) -> str:
 
 
 @tool
+@log_tool_call
 def worktree_run(name: str, command: str) -> str:
     """在 worktree 中运行命令"""
     manager = get_worktree_manager()
@@ -390,6 +398,7 @@ def worktree_run(name: str, command: str) -> str:
 
 
 @tool
+@log_tool_call
 def worktree_remove(name: str, force: bool = False, complete_task: bool = False) -> str:
     """删除 worktree"""
     manager = get_worktree_manager()
@@ -397,6 +406,7 @@ def worktree_remove(name: str, force: bool = False, complete_task: bool = False)
 
 
 @tool
+@log_tool_call
 def worktree_keep(name: str) -> str:
     """保留 worktree"""
     manager = get_worktree_manager()
@@ -404,6 +414,7 @@ def worktree_keep(name: str) -> str:
 
 
 @tool
+@log_tool_call
 def worktree_events(limit: int = 20) -> str:
     """查看最近事件"""
     bus = get_event_bus()

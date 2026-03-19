@@ -13,6 +13,7 @@ import uuid
 from pathlib import Path
 from typing import Dict, Optional
 from langchain_core.tools import tool
+from ..infrastructure.tool_logger import log_tool_call
 
 from ..agents.teams import MessageBus, TeammateManager, get_bus, get_teammate_manager
 
@@ -84,6 +85,7 @@ def check_shutdown_status(request_id: str) -> str:
 
 
 @tool
+@log_tool_call
 def shutdown_request(teammate: str) -> str:
     """
     请求队友优雅关闭
@@ -98,6 +100,7 @@ def shutdown_request(teammate: str) -> str:
 
 
 @tool
+@log_tool_call
 def shutdown_response(request_id: str) -> str:
     """
     检查关闭请求状态
@@ -112,6 +115,7 @@ def shutdown_response(request_id: str) -> str:
 
 
 @tool
+@log_tool_call
 def plan_approval(request_id: str, approve: bool, feedback: str = "") -> str:
     """
     批准或拒绝队友的计划

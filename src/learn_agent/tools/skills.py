@@ -9,6 +9,7 @@ import re
 from pathlib import Path
 from typing import Dict, List, Optional
 from langchain_core.tools import tool
+from ..infrastructure.tool_logger import log_tool_call
 
 from ..core.config import get_config
 from ..infrastructure.project_config import get_project_config
@@ -180,6 +181,7 @@ def get_skill_loader() -> SkillLoader:
 
 
 @tool
+@log_tool_call
 def load_skill(name: str) -> str:
     """
     加载技能内容（Layer 2）
@@ -200,6 +202,7 @@ def load_skill(name: str) -> str:
 
 
 @tool
+@log_tool_call
 def list_skills() -> str:
     """
     列出所有可用技能
@@ -214,6 +217,7 @@ def list_skills() -> str:
 
 
 @tool
+@log_tool_call
 def get_skill_info(name: str) -> str:
     """
     获取技能信息
@@ -241,6 +245,7 @@ def get_skill_info(name: str) -> str:
 
 
 @tool
+@log_tool_call
 def reload_skills() -> str:
     """
     重新加载技能

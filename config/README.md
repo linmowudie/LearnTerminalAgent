@@ -28,9 +28,9 @@
 
 ## 🔐 API 密钥配置
 
-API 密钥**不建议**直接写在配置文件中，推荐使用以下方式：
+⚠️ **重要提示**：API 密钥**不建议**直接写在配置文件中，推荐使用以下方式：
 
-### 方法 1：环境变量（推荐）
+### 👍 方法 1：环境变量（推荐）
 
 ```bash
 # Linux/macOS
@@ -40,38 +40,49 @@ export QWEN_API_KEY="sk-xxxxx"
 $env:QWEN_API_KEY="sk-xxxxx"
 ```
 
-### 方法 2：.env 文件
+### 📄 方法 2：.env 文件
 
 在项目根目录创建 `.env` 文件：
 
-```
+```bash
+# .env 文件内容
 QWEN_API_KEY=sk-xxxxx
 ```
 
-### 方法 3：系统环境变量
+### 🔧 方法 3：系统环境变量
 
 永久添加到系统环境变量（推荐用于生产环境）。
 
 ## 📋 配置加载优先级
 
-LearnTerminalAgent 按以下优先级加载配置：
+LearnTerminalAgent 按以下优先级加载配置（从高到低）：
 
-1. **环境变量**（最高优先级）
-2. **config.json 文件**
-3. **默认值**（最低优先级）
+1. **环境变量** - 最高优先级，覆盖所有其他配置
+2. **config.json 文件** - 中等优先级
+3. **默认值** - 最低优先级，当上述配置不存在时使用
 
 ## 🛠️ 自定义配置
 
 你可以复制 `config.json` 并修改参数：
 
 ```bash
+# 复制配置文件
 cp config/config.json config/my-config.json
 ```
 
 然后在代码中指定配置文件路径。
 
+**示例**：
+
+```python
+from learn_agent.config import load_config
+
+# 加载自定义配置文件
+config = load_config("config/my-config.json")
+```
+
 ## 🔗 相关文档
 
-- [配置指南](../docs/guides/config-guide.md)
-- [快速入门](../docs/QUICK_START.md)
-- [项目概述](../docs/PROJECT_OVERVIEW.md)
+- **[配置指南](../docs/guides/config-guide.md)** - 详细配置说明
+- **[快速入门](../docs/guides/quickstart.md)** - 5 分钟上手
+- **[项目概述](../docs/PROJECT_OVERVIEW.md)** - 整体架构

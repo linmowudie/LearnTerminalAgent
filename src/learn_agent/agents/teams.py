@@ -15,6 +15,7 @@ from typing import Dict, List, Optional, Set
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 from langchain_core.tools import tool
+from ..infrastructure.tool_logger import log_tool_call
 
 from ..core.config import get_config
 from ..infrastructure.project_config import get_project_config
@@ -502,6 +503,7 @@ def get_teammate_manager() -> TeammateManager:
 
 
 @tool
+@log_tool_call
 def spawn_teammate(name: str, role: str, prompt: str) -> str:
     """
     创建持久化队友代理
@@ -519,6 +521,7 @@ def spawn_teammate(name: str, role: str, prompt: str) -> str:
 
 
 @tool
+@log_tool_call
 def list_teammates() -> str:
     """
     列出所有队友
@@ -531,6 +534,7 @@ def list_teammates() -> str:
 
 
 @tool
+@log_tool_call
 def send_message(to: str, content: str, msg_type: str = "message") -> str:
     """
     发送消息给队友
@@ -548,6 +552,7 @@ def send_message(to: str, content: str, msg_type: str = "message") -> str:
 
 
 @tool
+@log_tool_call
 def read_inbox() -> str:
     """
     读取 lead 的收件箱
@@ -560,6 +565,7 @@ def read_inbox() -> str:
 
 
 @tool
+@log_tool_call
 def broadcast(content: str) -> str:
     """
     广播消息给所有队友

@@ -21,14 +21,16 @@ from ..infrastructure.workspace import get_workspace
 from ..tools.todo import get_todo_manager, reset_todo
 from ..agents.subagent import spawn_subagent
 from ..infrastructure.logger import logger_agent
+from ..infrastructure.display import TerminalDisplay
 from ..tools.skills import get_skill_loader, reload_skills
 from ..services.context import (
     get_compactor,
     estimate_tokens,
 )
 from ..tools.task_system import reset_tasks
-from ..services.background import drain_bg_notifications
+from ..services.background import drain_bg_notifications, reset_background
 from ..agents.teams import reset_teams
+from ..services.memory_storage import get_memory_storage
 
 class AgentLoop:
     """
@@ -108,8 +110,15 @@ class AgentLoop:
         # 工具调用标志（用于主循环判断是否显示卡片）
         self._has_tool_calls = False
         
+        # 终端显示器
+        self.display = TerminalDisplay(verbose=True)
+        
         # 后台任务通知
         self._process_background_notifications()
+        
+        # ========== 记忆存储初始化 ==========
+        self.memory_storage = get_memory_storage()
+        self._current_session_id = None
     
     def run(self, query: str, verbose: bool = True, stream: bool = True) -> str:
         """
@@ -123,6 +132,12 @@ class AgentLoop:
         Returns:
             Agent 的最终响应
         """
+        # ========== 记忆存储：开始新会话 ==========
+        if self._current_session_id is None:
+            workspace = get_workspace()
+            self._current_session_id = self.memory_storage.start_session(str(workspace.root))
+            logger_agent.debug(f"Memory session started: {self._current_session_id}")
+        # =========================================
         # 重置工具调用标志
         self._has_tool_calls = False
         
@@ -297,13 +312,20 @@ class AgentLoop:
                 
                 # 确实不需要工具调用时，返回文本响应
                 if not response.content or response.content.strip() == "思考完成":
-                    return "我已收到您的请求。请告诉我具体需要做什么？"
+                    result = "我已收到您的请求。请告诉我具体需要做什么？"
+                    # 保存消息到记忆存储
+                    self.memory_storage.save_message(self._current_session_id, query, "human")
+                    self.memory_storage.save_message(self._current_session_id, result, "ai")
+                    return result
                 
-                return response.content
+                result = response.content
+                # 保存消息到记忆存储
+                self.memory_storage.save_message(self._current_session_id, query, "human")
+                self.memory_storage.save_message(self._current_session_id, result, "ai")
+                return result
             
             # 执行工具调用
-            if verbose:
-                print(f"\n[Iteration {self.iteration_count}]")
+            self.display.print_section_header(f"[Iteration {self.iteration_count}]")
             
             tool_results = []
             for tool_call in response.tool_calls:
@@ -311,22 +333,23 @@ class AgentLoop:
                 tool_args = tool_call["args"]
                 
                 # 打印工具调用
-                if verbose:
-                    if tool_name == "bash":
-                        cmd = tool_args.get('command', str(tool_args))
-                        print(f"\033[33m$ {cmd}\033[0m")
-                    else:
-                        print(f"\033[33m[{tool_name}] {tool_args}\033[0m")
+                self.display.print_tool_call(tool_name, tool_args)
+                
+                # 启动加载动画（工具执行中）- 静态模式，不显示完成消息
+                self.display.show_loading_animation(
+                    f"🤖 执行 {tool_name}:", 
+                    show_complete_message=False,
+                    is_static=True  # 使用静态指示器
+                )
                 
                 # 执行工具
                 result = self._execute_tool(tool_name, tool_args)
                 
+                # 停止加载动画
+                self.display.stop_loading_animation()
+                
                 # 打印结果
-                if verbose and result:
-                    preview = result[:200]
-                    if len(result) > 200:
-                        preview += "..."
-                    print(preview)
+                self.display.print_tool_result(result, max_preview=200)
                 
                 # 记录工具结果
                 tool_results.append({
@@ -337,12 +360,22 @@ class AgentLoop:
             
             # 添加工具结果到消息历史
             for tool_result in tool_results:
-                self.messages.append(
-                    ToolMessage(
-                        content=tool_result["content"],
-                        tool_call_id=tool_result["tool_call_id"],
-                        name=tool_result["name"],
-                    )
+                tool_msg = ToolMessage(
+                    content=tool_result["content"],
+                    tool_call_id=tool_result["tool_call_id"],
+                    name=tool_result["name"],
+                )
+                self.messages.append(tool_msg)
+                
+                # 保存工具调用记录到记忆存储
+                self.memory_storage.save_message(
+                    self._current_session_id,
+                    {
+                        'tool_name': tool_result['name'],
+                        'tool_args': tool_args,
+                        'tool_result': tool_result['content']
+                    },
+                    "tool"
                 )
             
             # Layer 1: micro_compact - 每次迭代后压缩旧的工具结果
@@ -493,29 +526,10 @@ class AgentLoop:
         3. 空响应检测与强制重试
         """
         from langchain_core.messages import AIMessage
-        import sys
-        import time
-        import threading
         
-        # ANSI 颜色代码
-        STYLE_CYAN = "\033[36m"
+        # ANSI 颜色代码（用于错误提示）
         STYLE_YELLOW = "\033[33m"
         STYLE_RESET = "\033[0m"
-        
-        # 加载动画控制标志
-        loading_stop_event = threading.Event()
-        
-        def show_loading():
-            """在后台显示加载动画"""
-            loading_chars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
-            idx = 0
-            while not loading_stop_event.is_set():
-                # 使用 \r 回到行首，然后重新打印文字和动画
-                print(f"\r{STYLE_CYAN}🤖 Agent 思考中:{STYLE_RESET} {loading_chars[idx % len(loading_chars)]}", end="", flush=True)
-                idx += 1
-                time.sleep(0.1)
-            # 清除动画，显示思考完毕并换行
-            print(f"\r{STYLE_CYAN}🤖 Agent 思考中:{STYLE_RESET} 思考完毕{STYLE_RESET}\n", end="", flush=True)
         
         try:
             # ========== 详细日志：流式调用开始 ==========
@@ -534,10 +548,8 @@ class AgentLoop:
             # 流式调用 - 只用于显示文本
             stream = self.llm_with_tools.stream(self.messages)
             
-            if verbose:
-                # 启动加载动画线程（动画中会包含"🤖 Agent 思考中:"文字）
-                loading_thread = threading.Thread(target=show_loading, daemon=True)
-                loading_thread.start()
+            # 启动加载动画
+            self.display.show_loading_animation("🤖 Agent 思考中:")
             
             full_content = ""
             has_tool_calls = False
@@ -548,17 +560,15 @@ class AgentLoop:
                 chunk_count += 1
                 
                 # 第一个 chunk 到达时，停止加载动画
-                if verbose and not first_chunk_received:
+                if not first_chunk_received:
                     first_chunk_received = True
-                    loading_stop_event.set()  # 停止动画
-                    loading_thread.join(timeout=0.2)  # 等待线程结束
+                    self.display.stop_loading_animation()
                 
                 # 收集文本内容用于显示
                 if hasattr(chunk, 'content') and chunk.content:
                     full_content += chunk.content
-                    if verbose:
-                        # 逐块打印，模拟打字机效果
-                        print(chunk.content, end="", flush=True)
+                    # 逐块打印，模拟打字机效果
+                    self.display.print_stream_chunk(chunk.content)
                 
                 # 检测是否有工具调用片段
                 if hasattr(chunk, 'tool_calls') and chunk.tool_calls:
@@ -571,8 +581,8 @@ class AgentLoop:
                         logger_agent.info(f"  - ID: {tc.get('id', '无')}")
                     # ================================================
             
-            if verbose:
-                print()  # 换行
+            # 换行
+            self.display.print_newline()
             
             # ========== 详细日志：流式调用结束统计 ==========
             logger_agent.info(f"[流式调用] 完成统计:")
@@ -603,8 +613,7 @@ class AgentLoop:
                 
         except Exception as e:
             # 流式失败，降级到普通调用
-            if verbose:
-                print(f"\n{STYLE_YELLOW}⚠️ 流式输出失败，切换到普通模式：{e}{STYLE_RESET}")
+            self.display.print_warning(f"流式输出失败，切换到普通模式：{e}")
             return self.llm_with_tools.invoke(self.messages)
     
     def _execute_tool(self, tool_name: str, tool_args: dict) -> str:
@@ -615,9 +624,14 @@ class AgentLoop:
             tool_name: 工具名称
             tool_args: 工具参数
             
-        Returns:
+       Returns:
             工具执行结果
         """
+        # ========== 详细日志：工具执行开始 ==========
+        logger_agent.debug(f"[工具执行] 开始执行：{tool_name}")
+        logger_agent.debug(f"  - 参数：{tool_args}")
+        # ============================================
+        
         # 查找工具
         tool = None
         for t in self.tools:
@@ -626,14 +640,34 @@ class AgentLoop:
                 break
         
         if not tool:
+            logger_agent.error(f"[工具执行] 错误：未知工具 '{tool_name}'")
             return f"Error: Unknown tool '{tool_name}'"
+        
+        logger_agent.debug(f"  - 工具对象已找到：{tool}")
         
         # 执行工具
         try:
-            return tool.invoke(tool_args)
+            logger_agent.debug(f"  - 准备调用工具...")
+            result = tool.invoke(tool_args)
+            
+            # ========== 详细日志：工具执行完成 ==========
+            logger_agent.info(f"[工具执行] 完成：{tool_name}")
+            result_preview = str(result)[:200] if len(str(result)) > 200 else str(result)
+            logger_agent.debug(f"  - 结果预览：{result_preview}")
+            logger_agent.debug(f"  - 结果长度：{len(str(result))} 字符")
+            # ============================================
+            
+            return result
         except Exception as e:
+            # ========== 详细日志：工具执行失败 ==========
+            logger_agent.error(f"[工具执行] 异常：{tool_name}")
+            logger_agent.error(f"  - 错误类型：{type(e).__name__}")
+            logger_agent.error(f"  - 错误信息：{str(e)}")
+            import traceback
+            logger_agent.debug(f"  - 堆栈追踪：{traceback.format_exc()}")
+            # ============================================
             return f"Error executing {tool_name}: {type(e).__name__}: {str(e)}"
-    
+
     def reset(self):
         """重置 Agent 状态"""
         self.messages = [SystemMessage(content=self.system_prompt)]
@@ -658,10 +692,6 @@ class AgentLoop:
         """获取任务进度"""
         manager = get_todo_manager()
         return manager.render()
-    
-    def reset_todo(self):
-        """重置任务管理器"""
-        reset_todo()
     
     # ========== s04: SubAgent 功能 ==========
     
@@ -692,28 +722,6 @@ class AgentLoop:
             verbose=verbose,
         )
     
-    # ========== s05: Skill Loading 功能 ==========
-    
-    def list_skills(self) -> str:
-        """列出所有可用技能"""
-        loader = get_skill_loader()
-        return loader.get_descriptions()
-    
-    def load_skill(self, name: str) -> str:
-        """加载指定技能"""
-        loader = get_skill_loader()
-        content = loader.get_content(name)
-        if content:
-            return f"<skill name=\"{name}\">\n{content}\n</skill>"
-        else:
-            return f"Error: Skill '{name}' not found"
-    
-    def reload_skills(self) -> str:
-        """重新加载技能"""
-        return reload_skills.invoke({})
-    
-    # ========== s06: Context Compaction 功能 ==========
-    
     def compact_context(self, manual: bool = True) -> str:
         """
         压缩上下文
@@ -743,41 +751,6 @@ class AgentLoop:
         """启用/禁用自动压缩"""
         self.auto_compact_enabled = enabled
     
-    # ========== s07: Task System 功能 ==========
-    
-    def task_create(self, subject: str, description: str = "") -> str:
-        """创建新任务"""
-        from ..tools.task_system import get_task_manager
-        manager = get_task_manager()
-        return manager.create(subject, description)
-    
-    def task_get(self, task_id: int) -> str:
-        """获取任务详情"""
-        from ..tools.task_system import get_task_manager
-        return get_task_manager().get(task_id)
-    
-    def task_update(
-        self,
-        task_id: int,
-        status: Optional[str] = None,
-        add_blocked_by: Optional[List[int]] = None,
-        add_blocks: Optional[List[int]] = None,
-    ) -> str:
-        """更新任务状态或依赖关系"""
-        from ..tools.task_system import get_task_manager
-        return get_task_manager().update(task_id, status, add_blocked_by, add_blocks)
-    
-    def task_list(self) -> str:
-        """列出所有任务"""
-        from ..tools.task_system import get_task_manager
-        return get_task_manager().list_all()
-    
-    def reset_tasks(self):
-        """重置任务管理器"""
-        reset_tasks()
-    
-    # ========== s08: Background Tasks 功能 ==========
-    
     def background_run(self, command: str) -> str:
         """在后台运行命令"""
         from ..services.background import get_bg_manager
@@ -792,36 +765,3 @@ class AgentLoop:
         """重置后台管理器"""
         reset_background()
     
-    # ========== s09: Agent Teams 功能 ==========
-    
-    def spawn_teammate(self, name: str, role: str, prompt: str) -> str:
-        """创建持久化队友代理"""
-        from .agents.teams import get_teammate_manager
-        return get_teammate_manager().spawn(name, role, prompt)
-    
-    def list_teammates(self) -> str:
-        """列出所有队友"""
-        from .agents.teams import get_teammate_manager
-        return get_teammate_manager().list_all()
-    
-    def send_message(self, to: str, content: str, msg_type: str = "message") -> str:
-        """发送消息给队友"""
-        from .agents.teams import get_bus
-        return get_bus().send("lead", to, content, msg_type)
-    
-    def read_inbox(self) -> str:
-        """读取 lead 的收件箱"""
-        from .agents.teams import get_bus
-        import json
-        return json.dumps(get_bus().read_inbox("lead"), indent=2, ensure_ascii=False)
-    
-    def broadcast(self, content: str) -> str:
-        """广播消息给所有队友"""
-        from .agents.teams import get_bus, get_teammate_manager
-        bus = get_bus()
-        manager = get_teammate_manager()
-        return bus.broadcast("lead", content, manager.member_names())
-    
-    def reset_teams(self):
-        """重置团队管理器"""
-        reset_teams()

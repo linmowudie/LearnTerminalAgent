@@ -2,7 +2,14 @@
 
 ## 📋 概述
 
-日志系统已优化为**安静模式**，所有日志自动输出到 `logs` 目录，不在终端显示。
+日志系统已升级为 **DEBUG 级别**，支持灵活的配置化管理。所有日志自动输出到 `logs` 目录，不在终端显示。
+
+### 🎉 最新版本特性（2026-03-10）
+
+- ✅ **默认 DEBUG 级别** - 所有 logger 默认输出详细调试信息
+- ✅ **配置化支持** - 可通过 `config/config.json` 自定义各模块日志级别
+- ✅ **动态调整** - 支持运行时动态修改日志级别
+- ✅ **增强日志覆盖** - Agent 核心、工具调用等关键路径添加详细日志
 
 ---
 
@@ -55,12 +62,21 @@ explorer logs
 
 ### 文件格式
 
+```plaintext
+2026-03-10 15:18:56 [DEBUG] Agent: [工具执行] 开始执行：list_directory
+2026-03-10 15:18:56 [DEBUG] Agent:   - 参数：{'path': '.'}
+2026-03-10 15:18:57 [INFO] Agent: [工具执行] 完成：list_directory
+2026-03-10 15:18:57 [DEBUG] Agent:   - 结果预览：['file1.txt', 'file2.py']
+2026-03-10 15:18:58 [INFO] Workspace: 工作空间已设置：F:\ProjectCode\LearnTerminalAgent
+2026-03-10 15:19:00 [WARNING] Agent: ⚠️ 无工具调用
+2026-03-10 15:19:01 [ERROR] Tools: 文件未找到：test.txt
 ```
-2026-03-07 12:00:00 [INFO] Agent: 日志文件：logs/agent_20260307_120000.log
-2026-03-07 12:00:01 [INFO] Workspace: 工作空间已设置：F:\ProjectCode\LearnTerminalAgent
-2026-03-07 12:00:02 [WARNING] Agent: 检测到行动请求但未调用工具，添加提醒并重试 (第 1 次)
-2026-03-07 12:00:03 [ERROR] Tools: 文件未找到：test.txt
-```
+
+**说明**：
+- DEBUG 日志包含详细的函数调用、参数和返回值
+- INFO 日志记录关键业务流程节点
+- WARNING 日志提示潜在问题
+- ERROR 日志记录错误信息和异常堆栈
 
 ### 日志级别
 
@@ -122,7 +138,55 @@ def slow_function():
 
 ## ⚙️ 配置选项
 
-### 修改日志级别
+### 1. 通过配置文件设置（推荐）
+
+在 `config/config.json` 中添加或修改 `logging` 配置节：
+
+```json
+{
+  "logging": {
+    "default_level": "DEBUG",
+    "modules": {
+      "agent": "DEBUG",
+      "tools": "INFO",
+      "workspace": "DEBUG",
+      "config": "INFO"
+    }
+  }
+}
+```
+
+**配置说明**：
+- `default_level`: 全局默认日志级别（DEBUG/INFO/WARNING/ERROR）
+- `modules`: 各模块单独配置，支持差异化日志级别
+- 配置会在 Agent 启动时自动应用
+
+**示例场景**：
+```json
+// 开发调试模式 - 所有模块 DEBUG
+"logging": {
+  "default_level": "DEBUG",
+  "modules": {
+    "agent": "DEBUG",
+    "tools": "DEBUG",
+    "workspace": "DEBUG",
+    "config": "DEBUG"
+  }
+}
+
+// 生产运行模式 - 只记录重要信息
+"logging": {
+  "default_level": "INFO",
+  "modules": {
+    "agent": "INFO",
+    "tools": "WARNING",
+    "workspace": "INFO",
+    "config": "INFO"
+  }
+}
+```
+
+### 2. 运行时动态调整
 
 ```python
 import logging
@@ -134,6 +198,8 @@ set_log_level(logging.DEBUG)
 # 设置为 WARNING 级别（只记录警告和错误）
 set_log_level(logging.WARNING)
 ```
+
+**注意**：运行时调整的优先级高于配置文件，会立即生效。
 
 ### 自定义日志文件路径
 

@@ -12,6 +12,8 @@ import uuid
 from pathlib import Path
 from typing import Dict, List, Optional
 from langchain_core.tools import tool
+from ..infrastructure.tool_logger import log_tool_call
+from ..core.config import get_config
 
 
 class BackgroundManager:
@@ -146,6 +148,7 @@ def get_bg_manager() -> BackgroundManager:
 
 
 @tool
+@log_tool_call
 def background_run(command: str) -> str:
     """
     在后台运行命令（非阻塞）
@@ -156,11 +159,18 @@ def background_run(command: str) -> str:
     Returns:
         任务 ID
     """
+    # 安全检查：阻止危险命令
+    config = get_config()
+    for pattern in config.dangerous_patterns:
+        if pattern in command:
+            return f"Error: Dangerous command '{pattern}' blocked"
+    
     manager = get_bg_manager()
     return manager.run(command)
 
 
 @tool
+@log_tool_call
 def check_background(task_id: Optional[str] = None) -> str:
     """
     检查后台任务状态

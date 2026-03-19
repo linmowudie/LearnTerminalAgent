@@ -14,6 +14,7 @@ import time
 from pathlib import Path
 from typing import List, Optional, Dict
 from langchain_core.tools import tool
+from ..infrastructure.tool_logger import log_tool_call
 
 from ..tools.task_system import get_task_manager
 
@@ -58,6 +59,7 @@ def claim_task(task_id: int, owner: str) -> str:
 
 
 @tool
+@log_tool_call
 def idle() -> str:
     """
     进入空闲状态，轮询新任务
@@ -69,6 +71,7 @@ def idle() -> str:
 
 
 @tool
+@log_tool_call
 def claim_task_tool(task_id: int) -> str:
     """
     认领任务

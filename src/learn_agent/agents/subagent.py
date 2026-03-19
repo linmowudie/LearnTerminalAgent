@@ -12,6 +12,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from ..core.config import get_config, AgentConfig
 from ..tools.tools import get_all_tools
 from ..infrastructure.workspace import get_workspace
+from ..infrastructure.display import TerminalDisplay
 
 
 # 子代理提示词模板路径
@@ -120,6 +121,9 @@ class SubAgent:
         
         # 迭代计数器
         self.iteration_count = 0
+        
+        # 终端显示器（默认不启用详细输出）
+        self.display = TerminalDisplay(verbose=False)
     
     def run(self, task: str, verbose: bool = False) -> str:
         """
@@ -136,8 +140,8 @@ class SubAgent:
         self.messages.append(HumanMessage(content=task))
         
         if verbose:
-            print(f"\n[SubAgent Starting Task]")
-            print(f"Task: {task[:100]}...")
+            self.display.print_section_header("[SubAgent Starting Task]")
+            self.display.print_section_header(f"Task: {task[:100]}...")
         
         # 循环调用 LLM 直到不需要使用工具
         while True:
@@ -161,29 +165,26 @@ class SubAgent:
                 # 没有工具调用，任务完成，返回摘要
                 summary = response.content or "Task completed."
                 if verbose:
-                    print(f"\n[SubAgent Task Complete]")
-                    print(f"Summary: {summary}")
+                    self.display.print_section_header("[SubAgent Task Complete]")
+                    self.display.print_section_header(f"Summary: {summary}")
                 return summary
             
             # 执行工具调用
             if verbose:
-                print(f"\n[SubAgent Iteration {self.iteration_count}]")
+                self.display.print_section_header(f"[SubAgent Iteration {self.iteration_count}]")
             
             for tool_call in response.tool_calls:
                 tool_name = tool_call["name"]
                 tool_args = tool_call["args"]
                 
                 if verbose:
-                    print(f"  Using {tool_name}: {tool_args}")
+                    self.display.print_tool_call(tool_name, tool_args)
                 
                 # 执行工具
                 result = self._execute_tool(tool_name, tool_args)
                 
-                if verbose and result:
-                    preview = result[:100]
-                    if len(result) > 100:
-                        preview += "..."
-                    print(f"  Result: {preview}")
+                if verbose:
+                    self.display.print_tool_result(result, max_preview=100)
                 
                 # 添加结果到消息历史
                 from langchain_core.messages import ToolMessage

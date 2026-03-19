@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import List, Optional, Dict
 from langchain_core.tools import tool
 from dataclasses import dataclass, field
+from ..infrastructure.tool_logger import log_tool_call
 
 # 使用 ProjectConfig 管理路径
 from ..infrastructure.project_config import get_project_config
@@ -179,6 +180,7 @@ def get_task_manager() -> TaskManager:
 
 
 @tool
+@log_tool_call
 def task_create(subject: str, description: str = "") -> str:
     """
     创建新任务
@@ -195,6 +197,7 @@ def task_create(subject: str, description: str = "") -> str:
 
 
 @tool
+@log_tool_call
 def task_get(task_id: int) -> str:
     """
     获取任务详情
@@ -210,6 +213,7 @@ def task_get(task_id: int) -> str:
 
 
 @tool
+@log_tool_call
 def task_update(
     task_id: int,
     status: Optional[str] = None,
@@ -233,6 +237,7 @@ def task_update(
 
 
 @tool
+@log_tool_call
 def task_list() -> str:
     """
     列出所有任务

@@ -2,12 +2,93 @@
 
 ## 📊 优化概述
 
-**优化日期**: 2026-03-07  
+### 第一阶段：安静模式改造（2026-03-07）
 **优化目标**: 将日志系统改为安静模式，所有日志输出到 `logs` 目录，不在终端显示
+
+### 第二阶段：DEBUG 级别升级（2026-03-10） ✨ NEW
+**优化目标**: 将日志默认级别从 ERROR 提升至 DEBUG，支持配置化管理
 
 ---
 
-## ✅ 主要变更
+## 🎉 DEBUG 级别升级详情（2026-03-10）
+
+### 核心变更
+
+#### 1. 默认日志级别调整
+
+**修改前**:
+```python
+logger_agent = setup_logger('Agent', logging.ERROR, use_timestamp=False)
+logger_tools = setup_logger('Tools', logging.ERROR, use_timestamp=False)
+logger_workspace = setup_logger('Workspace', logging.ERROR, use_timestamp=False)
+logger_config = setup_logger('Config', logging.ERROR, use_timestamp=False)
+```
+
+**修改后**:
+```python
+logger_agent = setup_logger('Agent', logging.DEBUG, use_timestamp=False)
+logger_tools = setup_logger('Tools', logging.DEBUG, use_timestamp=False)
+logger_workspace = setup_logger('Workspace', logging.DEBUG, use_timestamp=False)
+logger_config = setup_logger('Config', logging.DEBUG, use_timestamp=False)
+```
+
+#### 2. 配置文件支持
+
+在 `config/config.json` 中添加 `logging` 配置节：
+```json
+{
+  "logging": {
+    "default_level": "DEBUG",
+    "modules": {
+      "agent": "DEBUG",
+      "tools": "DEBUG",
+      "workspace": "DEBUG",
+      "config": "DEBUG"
+    }
+  }
+}
+```
+
+#### 3. AgentConfig 类增强
+
+新增字段：
+```python
+@dataclass
+class AgentConfig:
+    # 日志配置
+    logging_default_level: str = "DEBUG"
+    logging_modules: dict = field(default_factory=lambda: {
+        "agent": "DEBUG",
+        "tools": "DEBUG",
+        "workspace": "DEBUG",
+        "config": "DEBUG"
+    })
+    
+    def apply_logging_config(self):
+        """应用日志配置到全局"""
+```
+
+#### 4. Agent 核心模块日志增强
+
+在 `_execute_tool()` 方法中添加详细日志：
+```python
+def _execute_tool(self, tool_name: str, tool_args: dict) -> str:
+    logger_agent.debug(f"[工具执行] 开始执行：{tool_name}")
+    logger_agent.debug(f"  - 参数：{tool_args}")
+    
+    try:
+        result = tool.invoke(tool_args)
+        logger_agent.info(f"[工具执行] 完成：{tool_name}")
+        logger_agent.debug(f"  - 结果预览：{result[:200]}")
+    except Exception as e:
+        logger_agent.error(f"[工具执行] 异常：{tool_name}")
+        logger_agent.error(f"  - 错误类型：{type(e).__name__}")
+        logger_agent.debug(f"  - 堆栈追踪：{traceback.format_exc()}")
+```
+
+---
+
+## ✅ 主要变更（第一阶段）
 
 ### 1. 移除终端输出
 

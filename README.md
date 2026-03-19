@@ -63,20 +63,20 @@ python -m learn_agent.main
 learn-terminal-agent
 ```
 
-详细指南请查看 [快速启动文档](docs/QUICK_START.md)
+详细指南请查看 [快速启动文档](docs/guides/quickstart.md)
 
 ## 📚 文档
 
 完整文档请访问 [docs/README.md](docs/README.md)
 
-### 核心文档
+### 📖 核心文档
 
-- **[快速入门](docs/QUICK_START.md)** - 5 分钟上手
+- **[快速入门](docs/guides/quickstart.md)** - 5 分钟上手
 - **[配置指南](docs/guides/config-guide.md)** - 详细配置说明
 - **[工具使用](docs/guides/tools.md)** - 所有内置工具文档
 - **[文档索引](docs/INDEX.md)** - 完整导航
 
-### Learn 系列（原理讲解）
+### 📚 Learn 系列（原理讲解）
 
 - [s01 - Agent 循环](docs/learn/s01-the-agent-loop.md)
 - [s02 - 工具使用](docs/learn/s02-tool-use.md)
@@ -93,51 +93,81 @@ learn-terminal-agent
 
 ## 💻 使用示例
 
-### 基础使用
+### 🖼️ 界面预览
+
+![Agent 对话界面](examples/屏幕截图 2026-03-19 170628.png)
+*图 1: LearnTerminalAgent 交互式对话界面 - 展示 Agent 与用户的自然语言交互过程*
+
+![任务管理功能](examples/屏幕截图 2026-03-19 170650.png)
+*图 2: TodoWrite 任务管理系统 - 实时跟踪和管理多任务执行进度*
+
+![多代理协作](examples/屏幕截图 2026-03-19 170709.png)
+*图 3: SubAgent 子代理委派 - 智能分解复杂任务并委派给专用子代理执行*
+
+---
+
+### 📝 基础使用
 
 ```python
+# 导入 Agent 核心类
 from learn_agent.agent import AgentLoop
 
+# 创建 Agent 实例，自动加载配置和工具
 agent = AgentLoop()
+
+# 运行任务：让 Agent 创建文件并写入内容
 response = agent.run("创建一个 hello.txt 文件，写入 Hello World")
+print(response)  # 输出执行结果
 ```
 
 或者运行 main.py 文件直接进行对话交流：
 
 ```bash
+# 启动交互式命令行界面
 python src/learn_agent/main.py
+
+# 进入交互模式后，可以直接输入自然语言指令
+# 例如："帮我创建一个 Python 项目结构"
 ```
 
-### 任务管理
+### 📋 任务管理
 
 ```python
-# 添加任务
+# 添加任务：Agent 会自动创建待办事项
 agent.run("添加任务：完成项目文档")
 
-# 更新状态
+# 更新状态：把任务 1 标记为进行中
 agent.run("把任务 1 标记为进行中")
 
-# 查看进度
+# 查看进度：显示所有任务列表及其状态
 agent.run("显示任务列表")
 ```
 
-### 子代理委派
+**说明**：TodoWrite 系统支持任务的增删改查，自动跟踪任务状态（待处理/进行中/已完成）。
+
+### 🤖 子代理委派
 
 ```python
-# 委派探索任务
+# 委派探索任务给子代理：SubAgent 会独立执行并返回摘要
 summary = agent.spawn_subagent("探索项目结构")
-print(summary)
+print(summary)  # 输出子代理的探索结果
 ```
 
-### 技能加载
+**说明**：SubAgent 拥有独立上下文，适合处理需要专注的复杂子任务，避免污染主 Agent 的上下文。
+
+### 🎯 技能加载
 
 ```python
-# 查看可用技能
+# 查看可用技能：列出 skills 目录下所有可用的技能模块
 skills = agent.list_skills()
+print(f"可用技能：{skills}")
 
-# 加载技能
+# 加载技能：读取特定技能的最佳实践和指导原则
 content = agent.load_skill("code-review")
+print(content)  # 输出代码审查技能内容
 ```
+
+**说明**：Skills 系统允许按需加载外部知识和最佳实践，扩展 Agent 的能力边界。
 
 ## 🏗️ 架构设计
 
@@ -255,7 +285,9 @@ pytest tests/
 
 ## 🤝 贡献
 
-欢迎提交 Issue 和 Pull Request！
+欢迎提交 Issue 和 Pull Request 来改进这个项目！
+
+**仓库地址**: https://github.com/linmowudie/LearnTerminalAgent
 
 ## 📄 许可证
 
@@ -263,9 +295,10 @@ MIT License
 
 ## 🔗 相关链接
 
-- [LangChain 文档](https://python.langchain.com/)
-- [通义千问 API](https://help.aliyun.com/zh/dashscope/)
-- [项目文档](docs/README.md)
+- **[LangChain 文档](https://python.langchain.com/)** - LangChain 官方文档
+- **[通义千问 API](https://help.aliyun.com/zh/dashscope/)** - 阿里云百炼大模型服务
+- **[项目完整文档](docs/README.md)** - LearnTerminalAgent 详细文档
+- **[原始项目](https://github.com/shareAI-lab/learn-claude-code)** - learn-claude-code 开源项目
 
 ---
 

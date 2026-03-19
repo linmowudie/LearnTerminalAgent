@@ -6,11 +6,12 @@ LearnTerminalAgent 配置管理模块
 
 import os
 import json
+import logging
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Optional, List
 from dotenv import load_dotenv
-from ..infrastructure.logger import logger_config
+from ..infrastructure.logger import logger_config, set_log_level
 
 
 @dataclass
@@ -48,6 +49,21 @@ class AgentConfig:
     # Worktree 配置
     worktree_enabled: bool = True
     worktree_base_ref: str = "HEAD"
+    
+    # 日志配置
+    logging_default_level: str = "DEBUG"
+    logging_modules: dict = field(default_factory=lambda: {
+        "agent": "DEBUG",
+        "tools": "DEBUG",
+        "workspace": "DEBUG",
+        "config": "DEBUG"
+    })
+    
+    # 敏感参数配置（用于日志掩码）
+    sensitive_param_names: List[str] = field(default_factory=lambda: [
+        'api_key', 'apikey', 'password', 'passwd', 
+        'secret', 'token', 'credential'
+    ])
     
     def __post_init__(self):
         """初始化后处理"""
@@ -168,7 +184,17 @@ class AgentConfig:
                 team_idle_timeout=data.get("team", {}).get("idle_timeout", 60),
                 worktree_enabled=data.get("worktree", {}).get("enabled", True),
                 worktree_base_ref=data.get("worktree", {}).get("base_ref", "HEAD"),
+                logging_default_level=data.get("logging", {}).get("default_level", "DEBUG"),
+                logging_modules=data.get("logging", {}).get("modules", {
+                    "agent": "DEBUG",
+                    "tools": "DEBUG",
+                    "workspace": "DEBUG",
+                    "config": "DEBUG"
+                }),
             )
+            
+            # 应用日志配置
+            config.apply_logging_config()
             
             logger_config.info(f"配置加载成功：{config_path}")
             print(f"[OK] Loaded config from: {config_path}")
@@ -179,6 +205,38 @@ class AgentConfig:
             print(f"Error loading config: {e}")
             print("Falling back to environment variables.")
             return cls.from_env()
+    
+    def apply_logging_config(self):
+        """
+        应用日志配置
+        
+        根据配置文件中的设置调整日志级别
+        """
+        try:
+            # 映射日志级别字符串到 logging 常量
+            level_map = {
+                "DEBUG": logging.DEBUG,
+                "INFO": logging.INFO,
+                "WARNING": logging.WARNING,
+                "ERROR": logging.ERROR
+            }
+            
+            # 获取默认级别
+            default_level = level_map.get(
+                self.logging_default_level.upper(), 
+                logging.DEBUG
+            )
+            
+            # 设置全局日志级别
+            set_log_level(default_level)
+            
+            logger_config.info(f"日志级别已设置为：{self.logging_default_level}")
+            logger_config.debug(f"模块日志配置：{self.logging_modules}")
+            
+        except Exception as e:
+            logger_config.error(f"应用日志配置失败：{e}")
+            # 失败时使用默认 DEBUG 级别
+            set_log_level(logging.DEBUG)
     
     def to_dict(self) -> dict:
         """转换为字典"""
@@ -212,6 +270,10 @@ class AgentConfig:
             "worktree": {
                 "enabled": self.worktree_enabled,
                 "base_ref": self.worktree_base_ref,
+            },
+            "logging": {
+                "default_level": self.logging_default_level,
+                "modules": self.logging_modules,
             },
         }
     

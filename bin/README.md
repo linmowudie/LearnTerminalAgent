@@ -9,32 +9,35 @@
 可执行的 Python 脚本，用于启动 LearnTerminalAgent CLI。
 
 ```bash
+# 直接运行脚本
 ./bin/learn-agent
 ```
 
 或添加到系统 PATH 后直接运行：
 
 ```bash
+# 使用命令
 learn-agent
 ```
 
 ## 🔧 安装方式
 
-### 方法 1：使用 pip 安装（推荐）
+### 👍 方法 1：使用 pip 安装（推荐）
 
 ```bash
+# 在项目根目录执行
 pip install -e .
 ```
 
 安装后会自动创建 `learn-agent` 命令。
 
-### 方法 2：直接运行脚本
+### 💻 方法 2：直接运行脚本
 
 ```bash
 python bin/learn-agent
 ```
 
-### 方法 3：使用 python -m
+### 🚀 方法 3：使用 python -m
 
 ```bash
 python -m learn_agent.main
@@ -50,6 +53,8 @@ learn-agent
 python src/learn_agent/main.py
 ```
 
+**说明**：推荐使用 `learn-agent` 命令，它会自动配置好所有环境变量和路径。
+
 ## 📝 说明
 
 - 该脚本通过 [pyproject.toml](../pyproject.toml) 中的 `[project.scripts]` 配置自动安装
@@ -58,6 +63,6 @@ python src/learn_agent/main.py
 
 ## 🔗 相关文档
 
-- [快速入门](../docs/QUICK_START.md)
-- [使用指南](../docs/guides/quickstart.md)
-- [工具说明](../docs/guides/tools.md)
+- **[快速入门](../docs/guides/quickstart.md)** - 5 分钟上手指南
+- **[使用指南](../docs/guides/README.md)** - 详细使用说明
+- **[工具说明](../docs/guides/tools.md)** - 所有工具完整手册

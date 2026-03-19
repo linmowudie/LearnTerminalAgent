@@ -66,5 +66,50 @@
   "worktree": {
     "enabled": true,
     "base_ref": "HEAD"
+  },
+  "memory": {
+    "enabled": true,
+    "storage_dir": "data/.transcripts",
+    "min_duration_seconds": 10,
+    "save_triggers": [
+      "session_end",
+      "task_completed"
+    ],
+    "retention_days": 90,
+    "auto_retrieve_enabled": true,
+    "retrieve_check_interval": 300
+  },
+  "search": {
+    "default_max_results": 50,
+    "supported_extensions": [
+      ".py",
+      ".js",
+      ".ts",
+      ".java",
+      ".go",
+      ".rs",
+      ".cpp",
+      ".c",
+      ".h",
+      ".hpp"
+    ],
+    "exclude_directories": [
+      "node_modules",
+      ".git",
+      "__pycache__",
+      "bin",
+      "build",
+      "dist"
+    ],
+    "max_search_depth": 10
+  },
+  "logging": {
+    "default_level": "DEBUG",
+    "modules": {
+      "agent": "DEBUG",
+      "tools": "DEBUG",
+      "workspace": "DEBUG",
+      "config": "DEBUG"
+    }
   }
 }

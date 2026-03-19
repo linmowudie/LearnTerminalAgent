@@ -17,16 +17,18 @@ from datetime import datetime
 
 def setup_logger(
     name: str,
-    level: int = logging.INFO,
+    level: int = logging.DEBUG,
     log_file: Optional[str] = None,
+    use_timestamp: bool = False,
 ) -> logging.Logger:
     """
     设置并返回 logger
     
     Args:
         name: logger 名称
-        level: 日志级别（默认 INFO）
+        level: 日志级别（默认 DEBUG）
         log_file: 日志文件路径（如果为 None，则使用默认 logs 目录）
+        use_timestamp: 是否在文件名中使用时戳（默认 False，按模块分类）
         
     Returns:
         配置好的 Logger 对象
@@ -48,9 +50,14 @@ def setup_logger(
         log_dir = Path("logs")
         log_dir.mkdir(parents=True, exist_ok=True)
         
-        # 使用时间戳文件名
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        log_file = f"{log_dir}/{name}_{timestamp}.log"
+        # 根据 use_timestamp 决定文件名
+        if use_timestamp:
+            # 使用时间戳文件名（用于诊断场景）
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            log_file = f"{log_dir}/{name}_{timestamp}.log"
+        else:
+            # 使用固定文件名（按模块分类）
+            log_file = f"{log_dir}/{name.lower()}.log"
     
     # 确保日志目录存在
     log_path = Path(log_file)
@@ -75,26 +82,26 @@ def setup_logger(
 
 # ========== 全局 Logger 实例 ==========
 
-# Agent 核心日志 - 输出到 logs/agent_*.log
-logger_agent = setup_logger('Agent', logging.INFO)
+# Agent 核心日志 - 输出到 logs/agent.log
+logger_agent = setup_logger('Agent', logging.DEBUG, use_timestamp=False)
 
-# 工具执行日志 - 输出到 logs/tools_*.log
-logger_tools = setup_logger('Tools', logging.INFO)
+# 工具执行日志 - 输出到 logs/tools.log
+logger_tools = setup_logger('Tools', logging.DEBUG, use_timestamp=False)
 
-# 工作空间日志 - 输出到 logs/workspace_*.log
-logger_workspace = setup_logger('Workspace', logging.INFO)
+# 工作空间日志 - 输出到 logs/workspace.log
+logger_workspace = setup_logger('Workspace', logging.DEBUG, use_timestamp=False)
 
-# 配置日志 - 输出到 logs/config_*.log
-logger_config = setup_logger('Config', logging.INFO)
+# 配置日志 - 输出到 logs/config.log
+logger_config = setup_logger('Config', logging.DEBUG, use_timestamp=False)
 
 
-def get_logger(name: str, level: int = logging.INFO) -> logging.Logger:
+def get_logger(name: str, level: int = logging.DEBUG) -> logging.Logger:
     """
     获取自定义 logger
     
     Args:
         name: logger 名称
-        level: 日志级别
+        level: 日志级别（默认 DEBUG）
         
     Returns:
         Logger 对象

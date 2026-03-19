@@ -7,6 +7,7 @@ LearnTerminalAgent TodoWrite 模块 - s03
 from typing import List, Dict, Optional
 from dataclasses import dataclass, field
 from langchain_core.tools import tool
+from ..infrastructure.tool_logger import log_tool_call
 
 
 @dataclass
@@ -127,6 +128,7 @@ def get_todo_manager() -> TodoManager:
 
 
 @tool
+@log_tool_call
 def todo_add(text: str) -> str:
     """
     添加新任务到待办列表
@@ -143,6 +145,7 @@ def todo_add(text: str) -> str:
 
 
 @tool
+@log_tool_call
 def todo_update(item_id: str, status: str, text: Optional[str] = None) -> str:
     """
     更新任务状态或内容
@@ -164,6 +167,7 @@ def todo_update(item_id: str, status: str, text: Optional[str] = None) -> str:
 
 
 @tool
+@log_tool_call
 def todo_remove(item_id: str) -> str:
     """
     删除任务
@@ -182,6 +186,7 @@ def todo_remove(item_id: str) -> str:
 
 
 @tool
+@log_tool_call
 def todo_list() -> str:
     """
     列出所有任务
@@ -194,6 +199,7 @@ def todo_list() -> str:
 
 
 @tool
+@log_tool_call
 def todo_progress() -> str:
     """
     显示任务进度统计

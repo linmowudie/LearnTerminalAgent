@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from .config import get_config
 from .agent import AgentLoop
 from ..infrastructure.logger import logger_workspace
+from ..services.memory_storage import reset_memory_storage
 
 
 def print_banner():
@@ -107,57 +108,16 @@ def print_help():
 
 def _format_response_card(content: str) -> str:
     """
-    将响应格式化为 HTML 风格的卡片输出
+    将响应格式化为卡片输出（使用 display 模块的 Rich 功能）
     
     Args:
         content: 要格式化的内容
         
     Returns:
-        格式化后的字符串（使用 ANSI 转义码模拟 HTML 效果）
+        格式化后的字符串（Rich 会自动渲染，这里返回原始内容）
     """
-    # ANSI 颜色代码
-    GREEN = "\033[32m"
-    CYAN = "\033[36m"
-    YELLOW = "\033[33m"
-    BOLD = "\033[1m"
-    RESET = "\033[0m"
-    
-    # 固定边距空格数
-    LEFT_MARGIN = "  "  # 左侧保留 2 个空格
-    RIGHT_MARGIN = "  "   # 右侧同样保留两个空格
-    
-    # 分割内容为行
-    lines = content.split('\n')
-    
-    # 构建卡片边框（基于实际内容宽度 + 固定边距）
-    max_content_width = max(len(line) for line in lines)
-    # 卡片总宽度 = 左边界 (║) + 空格 (1) + 内容 + 空格 (1) + 右边界 (║)
-    inner_width = max_content_width + 2  # 内容左右各留 1 个空格
-    border = LEFT_MARGIN + f"{CYAN}╔" + "═" * inner_width + f"╗{RIGHT_MARGIN}{RESET}"
-    bottom_border = LEFT_MARGIN + f"{CYAN}╚" + "═" * inner_width + f"╝{RIGHT_MARGIN}{RESET}"
-    
-    # 构建卡片内容
-    formatted_lines = []
-    formatted_lines.append(border)
-    
-    for line in lines:
-        # 检测内容类型并应用样式
-        if line.strip().startswith(('```', 'import ', 'def ', 'class ', 'return ')):
-            # 代码块 - 使用黄色
-            formatted_lines.append(LEFT_MARGIN + f"{CYAN}║ {YELLOW}{line.ljust(max_content_width)}{CYAN} ║{RIGHT_MARGIN}{RESET}")
-        elif line.strip().startswith(('✅', '✓', '✔')):
-            # 成功消息 - 使用绿色
-            formatted_lines.append(LEFT_MARGIN + f"{CYAN}║ {GREEN}{BOLD}{line.ljust(max_content_width)}{CYAN} ║{RIGHT_MARGIN}{RESET}")
-        elif line.strip().startswith(('⚠️', '❗', 'Error')):
-            # 警告/错误 - 使用红色
-            formatted_lines.append(LEFT_MARGIN + f"{CYAN}║ \033[31m{line.ljust(max_content_width)}{CYAN} ║{RIGHT_MARGIN}{RESET}")
-        else:
-            # 普通文本
-            formatted_lines.append(LEFT_MARGIN + f"{CYAN}║ {GREEN}{line.ljust(max_content_width)}{CYAN} ║{RIGHT_MARGIN}{RESET}")
-    
-    formatted_lines.append(bottom_border)
-    
-    return '\n'.join(formatted_lines)
+    # 这个函数现在只是占位，实际格式化由 TerminalDisplay.print_response_card 处理
+    return content
 
 
 def main():
@@ -254,7 +214,9 @@ def main():
                     continue
                 
                 elif command == "skills":
-                    skills = agent.list_skills()
+                    from ..tools.skills import get_skill_loader
+                    loader = get_skill_loader()
+                    skills = loader.get_descriptions()
                     print(f"\n可用技能:\n{skills}\n")
                     continue
                 
@@ -280,7 +242,7 @@ def main():
             # 运行 Agent - 使用流式输出
             response = agent.run(query, verbose=True, stream=True)
             
-            # 打印响应 - 使用 HTML 样式格式化
+            # 打印响应 - 使用 Rich 卡片格式化
             # 只有当响应包含实际内容且不是错误信息时才显示卡片
             # 工具调用的过程已经在 verbose 模式中输出，不需要重复显示
             if response and len(response.strip()) > 0 and not any(x in response for x in ['Error:', '❌', '我已收到您的请求']):
@@ -288,14 +250,21 @@ def main():
                 # 如果有工具调用，verbose 模式已经显示了过程和结果，不需要再显示卡片
                 # 只有纯文本回答才需要显示卡片
                 if not hasattr(agent, '_has_tool_calls') or not agent._has_tool_calls:
-                    print(f"\n{_format_response_card(response)}\n")
+                    # 使用 Rich 渲染 Markdown 和卡片
+                    agent.display.print_response_card(response, style="default")
         
         except KeyboardInterrupt:
             print("\n\n👋 中断退出\n")
+            # 结束当前记忆会话
+            if hasattr(agent, '_current_session_id') and agent._current_session_id:
+                agent.memory_storage.end_session(agent._current_session_id)
             break
         
         except EOFError:
             print("\n\n👋 再见！\n")
+            # 结束当前记忆会话
+            if hasattr(agent, '_current_session_id') and agent._current_session_id:
+                agent.memory_storage.end_session(agent._current_session_id)
             break
         
         except Exception as e:

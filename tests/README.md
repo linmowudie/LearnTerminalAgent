@@ -19,31 +19,31 @@ tests/
 
 ## 🧪 运行测试
 
-### 运行所有测试
+### 🏃 运行所有测试
 
 ```bash
 pytest tests/
 ```
 
-### 运行特定测试文件
+### 🎯 运行特定测试文件
 
 ```bash
 pytest tests/test_agent.py
 ```
 
-### 运行特定测试函数
+### 🔍 运行特定测试函数
 
 ```bash
 pytest tests/test_agent.py::test_agent_initialization
 ```
 
-### 显示覆盖率
+### 📊 显示覆盖率
 
 ```bash
 pytest --cov=src/learn_agent tests/
 ```
 
-### 详细输出
+### 📝 详细输出
 
 ```bash
 pytest -v tests/
@@ -51,20 +51,20 @@ pytest -v tests/
 
 ## 📝 测试规范
 
-### 测试文件命名
+### 📄 测试文件命名
 
 - 以 `test_` 开头
 - 对应源代码模块名
 - 例如：`agent.py` → `test_agent.py`
 
-### 测试函数命名
+### 🔬 测试函数命名
 
 - 以 `test_` 开头
 - 描述测试内容
 - 使用下划线分隔
 - 例如：`test_agent_creates_file()`
 
-### 测试结构示例
+### 📋 测试结构示例
 
 ```python
 import pytest
@@ -124,7 +124,7 @@ def agent_instance():
 
 ## 📚 测试范围
 
-### 单元测试
+### 🧪 单元测试
 
 针对单个函数或方法的测试：
 
@@ -135,7 +135,7 @@ def test_read_file_success():
     assert isinstance(content, str)
 ```
 
-### 集成测试
+### 🔗 集成测试
 
 测试多个组件的协作：
 
@@ -147,7 +147,7 @@ def test_agent_with_tool_use():
     assert response is not None
 ```
 
-### 边界测试
+### 🔀 边界测试
 
 测试边界条件和异常情况：
 
@@ -175,6 +175,6 @@ def test_read_nonexistent_file():
 
 ## 🔗 相关文档
 
-- [项目开发](../docs/guides/)
-- [贡献指南](../README.md#贡献)
-- [GitHub Actions](https://github.com/linmowudie/LearnTerminalAgent/actions)
+- **[项目开发](../docs/guides/)** - 开发指南
+- **[贡献指南](../README.md#贡献)** - 如何贡献代码
+- **[GitHub Actions](https://github.com/linmowudie/LearnTerminalAgent/actions)** - CI/CD 工作流

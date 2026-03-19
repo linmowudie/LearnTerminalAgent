@@ -26,6 +26,8 @@ except ImportError:
 
 
 # ANSI 颜色常量
+STYLE_GRAY = "\033[90m"         # 灰色（用于思考过程、次要信息）
+STYLE_BRIGHT_GRAY = "\033[37m"  # 亮灰色（备用）
 STYLE_CYAN = "\033[36m"
 STYLE_YELLOW = "\033[33m"
 STYLE_RED = "\033[31m"
@@ -162,7 +164,8 @@ class TerminalDisplay:
         
         # 静态模式：只显示一次，不循环
         if self._is_static:
-            text = f"{STYLE_CYAN}{self._loading_prefix}{STYLE_RESET} {LOADING_CHARS[0]}"
+            # 修改：使用灰色代替青色
+            text = f"{STYLE_GRAY}{self._loading_prefix}{STYLE_RESET} {LOADING_CHARS[0]}"
             try:
                 print(text, end="", flush=True)
             except UnicodeEncodeError:
@@ -174,8 +177,8 @@ class TerminalDisplay:
         else:
             # 动态模式：循环显示旋转动画
             while not self._loading_stop_event.is_set():
-                # 使用 \r 回到行首，然后重新打印文字和动画
-                text = f"\r{STYLE_CYAN}{self._loading_prefix}{STYLE_RESET} {LOADING_CHARS[idx % len(LOADING_CHARS)]}"
+                # 修改：使用灰色代替青色
+                text = f"\r{STYLE_GRAY}{self._loading_prefix}{STYLE_RESET} {LOADING_CHARS[idx % len(LOADING_CHARS)]}"
                 try:
                     print(text, end="", flush=True)
                 except UnicodeEncodeError:
@@ -187,7 +190,8 @@ class TerminalDisplay:
         
         # 清除动画，根据标志决定是否显示完成消息
         if hasattr(self, '_show_complete_message') and self._show_complete_message:
-            text = f"\r{STYLE_CYAN}{self._loading_prefix}{STYLE_RESET} 思考完毕{STYLE_RESET}\n"
+            # 修改：完成消息也使用灰色
+            text = f"\r{STYLE_GRAY}{self._loading_prefix}{STYLE_RESET} 思考完毕{STYLE_RESET}\n"
             try:
                 print(text, end="", flush=True)
             except UnicodeEncodeError:
@@ -224,10 +228,17 @@ class TerminalDisplay:
         if not self.verbose:
             return
         
-        if tool_name == "bash":
+        # write_file 工具特殊处理：不显示实际内容
+        if tool_name == "write_file":
+            path = tool_args.get('path', '未知路径')
+            content_length = len(tool_args.get('content', ''))
+            # 只显示路径和长度，不显示实际内容
+            text = f"\033[33m[{tool_name}] 准备写入 {content_length} 字符到 {path}\033[0m"
+        elif tool_name == "bash":
             cmd = tool_args.get('command', str(tool_args))
             text = f"\033[33m$ {cmd}\033[0m"
         else:
+            # 其他工具正常显示
             text = f"\033[33m[{tool_name}] {tool_args}\033[0m"
         
         try:
